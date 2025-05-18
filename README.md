@@ -1,0 +1,1 @@
+This repository contains the code used for conducting the primary and secondary outcome analyses for the UPDATE trial "Impact of ultra-processed and minimally processed diets following UK dietary guidance on weight and cardiometabolic health: a randomised, cross-over, controlled feeding clinical trial"
