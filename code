@@ -1,1 +1,2898 @@
 ##UPDATE 
+
+##Pct weight change
+summary(all_outcomes_change_8_for_models_A$pct_weight_change)
+summary(all_outcomes_change_8_for_models_B$pct_weight_change)
+
+Model_Final <- lmer(pct_weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite", adjust = "none")
+#EMMEANS
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+Diet
+eff_size(Diet, sigma = sigma(Model_Final), edf = 46.1)
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL,adjust = "none")
+
+all_outcomes_change_8_for_models_ITT_sensitivity <- all_outcomes_change_8_for_models_ITT
+all_outcomes_change_8_for_models_ITT_sensitivity <- subset(all_outcomes_change_8_for_models_ITT_sensitivity, !is.na(pct_weight_change))
+View(all_outcomes_change_8_for_models_ITT_sensitivity)
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity <- UPDATE_database_Exploratory_Analysis_week8
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity <- subset(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity, !is.na(pct_weight_change))
+View(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity)
+
+#Test homogeneity of variance:
+#creates a fitted vs residual plot
+plot(Model_Final)
+plot(fitted(Model_Final),residuals(Model_Final))
+plot_model(Model_Final, type='diag')
+shapiro.test(residuals(Model_Final))
+
+#test fixed residuals of the model are normally distributed:
+qqnorm(resid(Model_Final))
+require("lattice")
+qqmath(Model_Final, id=0.05)
+hist((resid(Model_Final) - mean(resid(Model_Final))) / sd(resid(Model_Final)), freq = FALSE); curve(dnorm, add = TRUE)
+
+#Mice
+all_outcomes_change_8_for_models$diet_randomisation_arm_int <- 0
+all_outcomes_change_8_for_models$diet_randomisation_arm_int[all_outcomes_change_8_for_models$randomisation_arm == 1 & all_outcomes_change_8_for_models$Diet_Numeric == 1] <- 1 
+all_outcomes_change_8_for_models$diet_randomisation_arm_int[all_outcomes_change_8_for_models$randomisation_arm == 2 & all_outcomes_change_8_for_models$Diet_Numeric == 2] <- 2 
+all_outcomes_change_8_for_models$diet_randomisation_arm_int[all_outcomes_change_8_for_models$randomisation_arm == 1 & all_outcomes_change_8_for_models$Diet_Numeric == 2] <- 3 
+all_outcomes_change_8_for_models$diet_randomisation_arm_int[all_outcomes_change_8_for_models$randomisation_arm == 2 & all_outcomes_change_8_for_models$Diet_Numeric == 1] <- 4 
+tab1(all_outcomes_change_8_for_models$diet_randomisation_arm_int)
+
+all_outcomes_change_8_for_models$diet_randomisation_arm_int <- all_outcomes_change_8_for_models$Diet_Numeric*all_outcomes_change_8_for_models$randomisation_arm
+tab1(all_outcomes_change_8_for_models$diet_randomisation_arm_int)
+View(all_outcomes_change_8_for_models_ITT)
+all_outcomes_change_8_for_models_mice <-all_outcomes_change_8_for_models[c("record_id", 
+                                                                           "Diet_Numeric", "randomisation_arm", "work_pattern", "pct_weight_change", "diet_randomisation_arm_int")]
+all_outcomes_change_8_for_models_mice <-UPDATE_database_Exploratory_Analysis_week8[c("record_id", 
+                                                                                     "Diet_Numeric", "randomisation_arm", "sex", "ethnicity_white_other", "work_pattern", "education", "fam_hist_obesity", "occupation", "starting_bmr", "starting_weight", "starting_energy_intake", "pct_weight_change")]
+
+md.pattern(all_outcomes_change_8_for_models_mice)
+pred <- make.predictorMatrix(all_outcomes_change_8_for_models_mice)
+pred[,"record_id"] <- 0
+imp <- mice(all_outcomes_change_8_for_models_mice, pred = pred, m=10, maxit=25, meth='pmm', seed=500)
+imp$loggedEvents
+imp$imp$pct_weight_change
+imp$meth
+imp$pred
+densityplot(imp)
+summary(complete(imp, action = 'long'))
+plot(imp, layout = c(5, 5))
+fit <- with(imp, lmer(pct_weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                        (1|record_id)))
+summary(pool(fit))
+em <- emmeans(fit, specs = ~ Diet_Numeric)
+pairs(em, by = NULL,adjust = "none")
+
+
+#IPW
+all_outcomes_change_8_for_models_ITT_sensitivity$randomisation_arm_recoded <- all_outcomes_change_8_for_models_ITT_sensitivity$randomisation_arm
+tab1(all_outcomes_change_8_for_models_ITT_sensitivity$randomisation_arm_recoded)
+all_outcomes_change_8_for_models_ITT_sensitivity$randomisation_arm_recoded[all_outcomes_change_8_for_models_ITT_sensitivity$randomisation_arm_recoded == 1] <- 0
+all_outcomes_change_8_for_models_ITT_sensitivity$randomisation_arm_recoded[all_outcomes_change_8_for_models_ITT_sensitivity$randomisation_arm_recoded == 2] <- 1
+tab1(all_outcomes_change_8_for_models_ITT_sensitivity$randomisation_arm_recoded)
+
+all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric_recoded <- all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric
+tab1(all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric_recoded)
+all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric_recoded[all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric_recoded == 1] <- 0
+all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric_recoded[all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric_recoded == 2] <- 1
+tab1(all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric_recoded)
+
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$randomisation_arm_recoded <- UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$randomisation_arm
+tab1(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$randomisation_arm_recoded)
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$randomisation_arm_recoded[UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$randomisation_arm_recoded == 1] <- 0
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$randomisation_arm_recoded[UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$randomisation_arm_recoded == 2] <- 1
+tab1(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$randomisation_arm_recoded)
+
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric_recoded <- UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric
+tab1(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric_recoded)
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric_recoded[UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric_recoded == 1] <- 0
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric_recoded[UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric_recoded == 2] <- 1
+tab1(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric_recoded)
+
+#estimate the propensity score
+summary(all_outcomes_change_8_for_models_ITT_sensitivity$baseline_bia_bmr)
+ps_model <- glm(Diet_Numeric_recoded ~ sex + ethnicity_white_other + work_pattern + baseline_bia_bmr, family = binomial(), data = all_outcomes_change_8_for_models_ITT_sensitivity)
+ps_model <- glm(Diet_Numeric_recoded ~ randomisation_arm_recoded +sex + ethnicity_white_other + work_pattern, family = binomial(), data = all_outcomes_change_8_for_models_ITT_sensitivity)
+ps_model <- glm(Diet_Numeric_recoded ~ randomisation_arm_recoded + baseline_bia_bmr, family = binomial(), data = all_outcomes_change_8_for_models_ITT_sensitivity)
+all_outcomes_change_8_for_models_ITT_sensitivity$ps <- predict(ps_model, type = "response") 
+View(all_outcomes_change_8_for_models_ITT_sensitivity)
+all_outcomes_change_8_for_models_ITT_sensitivity$ipw <- ifelse(all_outcomes_change_8_for_models_ITT_sensitivity$pct_weight_change == 1, 1 / all_outcomes_change_8_for_models_ITT_sensitivity$ps, 1 / (1 - all_outcomes_change_8_for_models_ITT_sensitivity$ps))  # Compute weights
+summary(all_outcomes_change_8_for_models_ITT_sensitivity$ipw) 
+hist(all_outcomes_change_8_for_models_ITT_sensitivity$ipw)
+Model_Final <- lmer(pct_weight_change ~ Diet_Numeric_recoded + Diet_Numeric_recoded*randomisation_arm_recoded + work_pattern +
+                      (1|record_id), weights = ipw, data = all_outcomes_change_8_for_models_ITT_sensitivity)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric_recoded, ddf="Satterthwaite",adjust = "none")
+#stabilised weights
+p_treat <- mean(all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric_recoded)  # Overall probability of treatment
+all_outcomes_change_8_for_models_ITT_sensitivity$sw <- ifelse(all_outcomes_change_8_for_models_ITT_sensitivity$Diet_Numeric_recoded == 1, p_treat / all_outcomes_change_8_for_models_ITT_sensitivity$ps, (1 - p_treat) / (1 - all_outcomes_change_8_for_models_ITT_sensitivity$ps))
+summary(all_outcomes_change_8_for_models_ITT_sensitivity$sw) 
+hist(all_outcomes_change_8_for_models_ITT_sensitivity$sw)
+View(all_outcomes_change_8_for_models_ITT_sensitivity)
+Model_Final <- lmer(pct_weight_change ~ Diet_Numeric_recoded + Diet_Numeric_recoded*randomisation_arm_recoded + work_pattern +
+                      (1|record_id), weights = sw, data = all_outcomes_change_8_for_models_ITT_sensitivity)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric_recoded, ddf="Satterthwaite",adjust = "none")
+
+##with UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity
+summary(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$starting_bmr)
+ps_model <- glm(Diet_Numeric_recoded ~ sex + ethnicity_white_other + work_pattern + starting_bmr + starting_weight + starting_energy_intake, family = binomial(), data = UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity)
+ps_model <- glm(Diet_Numeric_recoded ~ randomisation_arm + sex + ethnicity_white_other + work_pattern + occupation + education + fam_hist_obesity + starting_bmr + starting_weight + starting_energy_intake, family = binomial(), data = UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity)
+ps_model <- glm(Diet_Numeric_recoded ~ randomisation_arm_recoded + baseline_bia_bmr, family = binomial(), data = UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity)
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$ps <- predict(ps_model, type = "response") 
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$ipw <- ifelse(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$pct_weight_change == 1, 1 / UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$ps, 1 / (1 - UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$ps))  # Compute weights
+summary(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$ipw) 
+hist(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$ipw)
+Model_Final <- lmer(pct_weight_change ~ Diet_Numeric_recoded + Diet_Numeric_recoded*randomisation_arm_recoded + work_pattern +
+                      (1|record_id), weights = ipw, data = UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric_recoded, ddf="Satterthwaite",adjust = "none")
+#stabilised weights
+p_treat <- mean(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric_recoded)  # Overall probability of treatment
+UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$sw <- ifelse(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$Diet_Numeric_recoded == 1, p_treat / UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$ps, (1 - p_treat) / (1 - UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$ps))
+summary(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$sw) 
+hist(UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity$sw)
+Model_Final <- lmer(pct_weight_change ~ Diet_Numeric_recoded + Diet_Numeric_recoded*randomisation_arm_recoded + work_pattern +
+                      (1|record_id), weights = sw, data = UPDATE_database_Exploratory_Analysis_week8_ITT_sensitivity)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric_recoded, ddf="Satterthwaite",adjust = "none")
+
+#######
+#Model only with period effect
+Model_2a <- lmer(pct_weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_2a)
+lsmeans(Model_2a, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+
+Model_3 <- lmer(pct_weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + ethnicity_white_other + sex + work_pattern +
+                  (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_3)
+parameters::p_value(Model_3)
+lsmeans(Model_3, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+
+Model_bmr <- lmer(pct_weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + baseline_bia_bmr +
+                    (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_bmr)
+parameters::p_value(Model_bmr)
+lsmeans(Model_bmr, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+
+Model_Final_bmr <- lmer(pct_weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern + baseline_bia_bmr +
+                          (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final_bmr)
+parameters::p_value(Model_Final_bmr)
+lsmeans(Model_Final_bmr, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+
+Model_3_bmr <- lmer(pct_weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + ethnicity_white_other + sex + work_pattern + baseline_bia_bmr +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_3_bmr)
+parameters::p_value(Model_3_bmr)
+lsmeans(Model_3_bmr, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+
+Model_Final_sex_eth <- lmer(pct_weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern + sex*Diet_Numeric + ethnicity_white_other +
+                              (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final_sex_eth)
+parameters::p_value(Model_Final_sex_eth)
+lsmeans(Model_Final_sex_eth, pairwise~sex|Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+
+Model_Final_sex <- lmer(pct_weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern + as.factor(sex) +
+                          (1|record_id),data = all_outcomes_change_8_for_models)
+summary(Model_Final_sex)
+parameters::p_value(Model_Final_sex)
+lsmeans(Model_Final_sex, pairwise~sex|Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+
+
+difference_in_pct_weight_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_pct_weight_change = (pct_weight_change[Diet == "A"] - pct_weight_change[Diet == "B"]))
+View(difference_in_pct_weight_change)
+mean(difference_in_pct_weight_change$difference_in_pct_weight_change, na.rm = T)
+sd(difference_in_pct_weight_change$difference_in_pct_weight_change, na.rm = T)
+pct_weight_change_A <- all_outcomes_change_8_for_models_A$pct_weight_change
+pct_weight_change_B <- all_outcomes_change_8_for_models_B$pct_weight_change
+baseline <- rep(0, 55)
+t.test(pct_weight_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pct_weight_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pct_weight_change_A, pct_weight_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By arms
+pct_weight_change_8_by_diet_by_arm_summary <- all_outcomes_change_8_for_models %>%
+  group_by(Diet_Numeric, randomisation_arm) %>%
+  summarise(
+    n = n(),
+    pct_weight_change_mean = mean(pct_weight_change, na.rm =T),
+    pct_weight_change_sd = sd(pct_weight_change, na.rm =T))
+View(pct_weight_change_8_by_diet_by_arm_summary)
+
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$pct_weight_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$pct_weight_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet_check$pct_weight_change[all_outcomes_change_8_for_models_First_diet_check$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet_check$pct_weight_change[all_outcomes_change_8_for_models_First_diet_check$Diet_Numeric == 2], na.rm = T)
+
+pct_weight_change_A_first <- all_outcomes_change_8_for_models_A$pct_weight_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+pct_weight_change_B_first <- all_outcomes_change_8_for_models_B$pct_weight_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(pct_weight_change_A_first, na.rm = T)
+summary(pct_weight_change_B_first, na.rm = T)
+t.test(pct_weight_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pct_weight_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(pct_weight_change_A_first,pct_weight_change_B_first)
+t.test(pct_weight_change_A_first, pct_weight_change_B_first, alternative = "two.sided", na.rm =T, var.equal=TRUE)
+
+#By second diet
+pct_weight_change_A_second <- all_outcomes_change_8_for_models_A$pct_weight_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+pct_weight_change_B_second <- all_outcomes_change_8_for_models_B$pct_weight_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(pct_weight_change_A_second, na.rm = T)
+sd(pct_weight_change_A_second, na.rm = T)
+summary(pct_weight_change_B_second, na.rm = T)
+sd(pct_weight_change_B_second, na.rm = T)
+t.test(pct_weight_change_A_second, mu = 0, alternative = "two.sided")
+t.test(pct_weight_change_B_second, mu = 0, alternative = "two.sided")
+baseline_AB <- rep(0, 28)
+baseline_BA <- rep(0, 27)
+t.test(pct_weight_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pct_weight_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#Repeated measures
+Model_Final <- lmer(pct_weight_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+
+
+##Weight change
+summary(all_outcomes_change_8_for_models_A$weight_change)
+summary(all_outcomes_change_8_for_models_B$weight_change)
+
+Model_Final <- lmer(weight_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+
+difference_in_weight_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_weight_change = (weight_change[Diet == "A"] - weight_change[Diet == "B"]))
+View(difference_in_weight_change)
+mean(difference_in_weight_change$difference_in_weight_change, na.rm = T)
+sd(difference_in_weight_change$difference_in_weight_change, na.rm = T)
+weight_change_A <- all_outcomes_change_8_for_models_A$weight_change
+weight_change_B <- all_outcomes_change_8_for_models_B$weight_change
+t.test(weight_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(weight_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(weight_change_A, weight_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$weight_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$weight_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+weight_change_A_first <- all_outcomes_change_8_for_models_A$weight_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+weight_change_B_first <- all_outcomes_change_8_for_models_B$weight_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(weight_change_A_first, na.rm = T)
+summary(weight_change_B_first, na.rm = T)
+t.test(weight_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(weight_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(weight_change_A_first,weight_change_B_first)
+t.test(all_outcomes_change_8_for_models_First_diet$weight_change ~ all_outcomes_change_8_for_models_First_diet$Diet_Numeric, alternative = "two.sided", na.rm =T, var.equal=TRUE)
+
+#By second diet
+weight_change_A_second <- all_outcomes_change_8_for_models_A$weight_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+weight_change_B_second <- all_outcomes_change_8_for_models_B$weight_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(weight_change_A_second, na.rm = T)
+sd(weight_change_A_second, na.rm = T)
+summary(weight_change_B_second, na.rm = T)
+sd(weight_change_B_second, na.rm = T)
+t.test(weight_change_A_second, mu = 0, alternative = "two.sided")
+t.test(weight_change_B_second, mu = 0, alternative = "two.sided")
+t.test(weight_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(weight_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(weight_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#WC
+summary(all_outcomes_change_8_for_models_A$wc_change)
+summary(all_outcomes_change_8_for_models_B$wc_change)
+
+Model_Final <- lmer(wc_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+
+difference_in_wc_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_wc_change = (wc_change[Diet == "A"] - wc_change[Diet == "B"]))
+View(difference_in_wc_change)
+
+summary(difference_in_wc_change$difference_in_wc_change, na.rm = T)
+mean(difference_in_wc_change$difference_in_wc_change, na.rm = T)
+sd(difference_in_wc_change$difference_in_wc_change, na.rm = T)
+
+wc_change_A <- all_outcomes_change_8_for_models_A$wc_change
+wc_change_B <- all_outcomes_change_8_for_models_B$wc_change
+t.test(wc_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(wc_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(wc_change_A, wc_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$wc_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$wc_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+wc_change_A_first <- all_outcomes_change_8_for_models_A$wc_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+wc_change_B_first <- all_outcomes_change_8_for_models_B$wc_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(wc_change_A_first, na.rm = T)
+summary(wc_change_B_first, na.rm = T)
+t.test(wc_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(wc_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(wc_change_A_first,wc_change_B_first)
+t.test(all_outcomes_change_8_for_models_First_diet$wc_change ~ all_outcomes_change_8_for_models_First_diet$Diet_Numeric, alternative = "two.sided", na.rm =T, var.equal=TRUE)
+
+#By second diet
+wc_change_A_second <- all_outcomes_change_8_for_models_A$wc_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+wc_change_B_second <- all_outcomes_change_8_for_models_B$wc_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(wc_change_A_second, na.rm = T)
+sd(wc_change_A_second, na.rm = T)
+summary(wc_change_B_second, na.rm = T)
+sd(wc_change_B_second, na.rm = T)
+t.test(wc_change_A_second, mu = 0, alternative = "two.sided")
+t.test(wc_change_B_second, mu = 0, alternative = "two.sided")
+t.test(wc_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(wc_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(wc_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#bmi_visit
+summary(all_outcomes_change_8_for_models_A$bmi_visit_change)
+summary(all_outcomes_change_8_for_models_B$bmi_visit_change)
+
+Model_Final <- lmer(bmi_visit_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+difference_in_bmi_visit_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bmi_visit_change = (bmi_visit_change[Diet == "A"] - bmi_visit_change[Diet == "B"]))
+View(difference_in_bmi_visit_change)
+
+summary(difference_in_bmi_visit_change$difference_in_bmi_visit_change, na.rm = T)
+mean(difference_in_bmi_visit_change$difference_in_bmi_visit_change, na.rm = T)
+sd(difference_in_bmi_visit_change$difference_in_bmi_visit_change, na.rm = T)
+
+bmi_visit_change_A <- all_outcomes_change_8_for_models_A$bmi_visit_change
+bmi_visit_change_B <- all_outcomes_change_8_for_models_B$bmi_visit_change
+t.test(bmi_visit_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bmi_visit_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bmi_visit_change_A, bmi_visit_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bmi_visit_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bmi_visit_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bmi_visit_change_A_first <- all_outcomes_change_8_for_models_A$bmi_visit_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bmi_visit_change_B_first <- all_outcomes_change_8_for_models_B$bmi_visit_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bmi_visit_change_A_first, na.rm = T)
+summary(bmi_visit_change_B_first, na.rm = T)
+t.test(bmi_visit_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bmi_visit_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bmi_visit_change_A_first,bmi_visit_change_B_first)
+t.test(bmi_visit_change_A_first, bmi_visit_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+t.test(all_outcomes_change_8_for_models_First_diet$bmi_visit_change ~ all_outcomes_change_8_for_models_First_diet$Diet_Numeric, alternative = "two.sided", na.rm =T)
+
+#By second diet
+bmi_visit_change_A_second <- all_outcomes_change_8_for_models_A$bmi_visit_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bmi_visit_change_B_second <- all_outcomes_change_8_for_models_B$bmi_visit_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bmi_visit_change_A_second, na.rm = T)
+sd(bmi_visit_change_A_second, na.rm = T)
+summary(bmi_visit_change_B_second, na.rm = T)
+sd(bmi_visit_change_B_second, na.rm = T)
+t.test(bmi_visit_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bmi_visit_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bmi_visit_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bmi_visit_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bmi_visit_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#WHtR
+summary(all_outcomes_change_8_for_models_A$WHtR_change)
+summary(all_outcomes_change_8_for_models_B$WHtR_change)
+
+Model_Final <- lmer(WHtR_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+difference_in_WHtR_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_WHtR_change = (WHtR_change[Diet == "A"] - WHtR_change[Diet == "B"]))
+View(difference_in_WHtR_change)
+
+summary(difference_in_WHtR_change$difference_in_WHtR_change, na.rm = T)
+mean(difference_in_WHtR_change$difference_in_WHtR_change, na.rm = T)
+sd(difference_in_WHtR_change$difference_in_WHtR_change, na.rm = T)
+
+WHtR_change_A <- all_outcomes_change_8_for_models_A$WHtR_change
+WHtR_change_B <- all_outcomes_change_8_for_models_B$WHtR_change
+t.test(WHtR_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(WHtR_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(WHtR_change_A, WHtR_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$WHtR_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$WHtR_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+WHtR_change_A_first <- all_outcomes_change_8_for_models_A$WHtR_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+WHtR_change_B_first <- all_outcomes_change_8_for_models_B$WHtR_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(WHtR_change_A_first, na.rm = T)
+summary(WHtR_change_B_first, na.rm = T)
+t.test(WHtR_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(WHtR_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(WHtR_change_A_first,WHtR_change_B_first)
+t.test(WHtR_change_A_first, WHtR_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+WHtR_change_A_second <- all_outcomes_change_8_for_models_A$WHtR_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+WHtR_change_B_second <- all_outcomes_change_8_for_models_B$WHtR_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(WHtR_change_A_second, na.rm = T)
+sd(WHtR_change_A_second, na.rm = T)
+summary(WHtR_change_B_second, na.rm = T)
+sd(WHtR_change_B_second, na.rm = T)
+t.test(WHtR_change_A_second, mu = 0, alternative = "two.sided")
+t.test(WHtR_change_B_second, mu = 0, alternative = "two.sided")
+t.test(WHtR_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(WHtR_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(WHtR_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#bmr
+summary(all_outcomes_change_8_for_models_A$bia_bmr_change)
+summary(all_outcomes_change_8_for_models_B$bia_bmr_change)
+
+Model_Final <- lmer(bia_bmr_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+difference_in_bmr_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bmr_change = (bia_bmr_change[Diet == "A"] - bia_bmr_change[Diet == "B"]))
+View(difference_in_bmr_change)
+
+mean(difference_in_bmr_change$difference_in_bmr_change, na.rm = T)
+sd(difference_in_bmr_change$difference_in_bmr_change, na.rm = T)
+
+bmr_change_A <- all_outcomes_change_8_for_models_A$bia_bmr_change
+bmr_change_B <- all_outcomes_change_8_for_models_B$bia_bmr_change
+t.test(bmr_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bmr_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bmr_change_A, bmr_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bia_bmr_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bia_bmr_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bia_bmr_change_A_first <- all_outcomes_change_8_for_models_A$bia_bmr_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bia_bmr_change_B_first <- all_outcomes_change_8_for_models_B$bia_bmr_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bia_bmr_change_A_first, na.rm = T)
+summary(bia_bmr_change_B_first, na.rm = T)
+t.test(bia_bmr_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bmr_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bia_bmr_change_A_first,bia_bmr_change_B_first)
+t.test(bia_bmr_change_A_first, bia_bmr_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+bia_bmr_change_A_second <- all_outcomes_change_8_for_models_A$bia_bmr_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bia_bmr_change_B_second <- all_outcomes_change_8_for_models_B$bia_bmr_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bia_bmr_change_A_second, na.rm = T)
+sd(bia_bmr_change_A_second, na.rm = T)
+summary(bia_bmr_change_B_second, na.rm = T)
+sd(bia_bmr_change_B_second, na.rm = T)
+t.test(bia_bmr_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bia_bmr_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bia_bmr_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bmr_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bia_bmr_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#bf pct
+summary(all_outcomes_change_8_for_models_A$bia_bf_pct_change)
+summary(all_outcomes_change_8_for_models_B$bia_bf_pct_change)
+
+difference_in_bia_bf_pct_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bia_bf_pct_change = (bia_bf_pct_change[Diet == "A"] - bia_bf_pct_change[Diet == "B"]))
+View(difference_in_bia_bf_pct_change)
+
+summary(difference_in_bia_bf_pct_change$difference_in_bia_bf_pct_change, na.rm = T)
+mean(difference_in_bia_bf_pct_change$difference_in_bia_bf_pct_change, na.rm = T)
+sd(difference_in_bia_bf_pct_change$difference_in_bia_bf_pct_change, na.rm = T)
+
+bia_bf_pct_change_A <- all_outcomes_change_8_for_models_A$bia_bf_pct_change
+bia_bf_pct_change_B <- all_outcomes_change_8_for_models_B$bia_bf_pct_change
+t.test(bia_bf_pct_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bf_pct_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bf_pct_change_A, bia_bf_pct_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(bia_bf_pct_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bia_bf_pct_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bia_bf_pct_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bia_bf_pct_change_A_first <- all_outcomes_change_8_for_models_A$bia_bf_pct_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bia_bf_pct_change_B_first <- all_outcomes_change_8_for_models_B$bia_bf_pct_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bia_bf_pct_change_A_first, na.rm = T)
+summary(bia_bf_pct_change_B_first, na.rm = T)
+t.test(bia_bf_pct_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bf_pct_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bia_bf_pct_change_A_first,bia_bf_pct_change_B_first)
+t.test(bia_bf_pct_change_A_first, bia_bf_pct_change_B_first, alternative = "two.sided", na.rm =T)
+t.test(all_outcomes_change_8_for_models_First_diet$bia_bf_pct_change ~ all_outcomes_change_8_for_models_First_diet$Diet_Numeric, alternative = "two.sided", na.rm =T)
+
+#By second diet
+bia_bf_pct_change_A_second <- all_outcomes_change_8_for_models_A$bia_bf_pct_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bia_bf_pct_change_B_second <- all_outcomes_change_8_for_models_B$bia_bf_pct_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bia_bf_pct_change_A_second, na.rm = T)
+sd(bia_bf_pct_change_A_second, na.rm = T)
+summary(bia_bf_pct_change_B_second, na.rm = T)
+sd(bia_bf_pct_change_B_second, na.rm = T)
+t.test(bia_bf_pct_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bia_bf_pct_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bia_bf_pct_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bf_pct_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bia_bf_pct_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#bia_visceral_fat_change
+summary(all_outcomes_change_8_for_models_A$bia_visceral_fat_change)
+summary(all_outcomes_change_8_for_models_B$bia_visceral_fat_change)
+
+difference_in_bia_visceral_fat_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bia_visceral_fat_change = (bia_visceral_fat_change[Diet == "A"] - bia_visceral_fat_change[Diet == "B"]))
+View(difference_in_bia_visceral_fat_change)
+
+summary(difference_in_bia_visceral_fat_change$difference_in_bia_visceral_fat_change, na.rm = T)
+mean(difference_in_bia_visceral_fat_change$difference_in_bia_visceral_fat_change, na.rm = T)
+sd(difference_in_bia_visceral_fat_change$difference_in_bia_visceral_fat_change, na.rm = T)
+
+bia_visceral_fat_change_A <- all_outcomes_change_8_for_models_A$bia_visceral_fat_change
+bia_visceral_fat_change_B <- all_outcomes_change_8_for_models_B$bia_visceral_fat_change
+t.test(bia_visceral_fat_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_visceral_fat_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_visceral_fat_change_A, bia_visceral_fat_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(bia_visceral_fat_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bia_visceral_fat_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bia_visceral_fat_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bia_visceral_fat_change_A_first <- all_outcomes_change_8_for_models_A$bia_visceral_fat_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bia_visceral_fat_change_B_first <- all_outcomes_change_8_for_models_B$bia_visceral_fat_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bia_visceral_fat_change_A_first, na.rm = T)
+summary(bia_visceral_fat_change_B_first, na.rm = T)
+t.test(bia_visceral_fat_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_visceral_fat_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bia_visceral_fat_change_A_first,bia_visceral_fat_change_B_first)
+t.test(bia_visceral_fat_change_A_first, bia_visceral_fat_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+t.test(all_outcomes_change_8_for_models_First_diet$bia_visceral_fat_change ~ all_outcomes_change_8_for_models_First_diet$Diet_Numeric, alternative = "two.sided", na.rm =T)
+
+#By second diet
+bia_visceral_fat_change_A_second <- all_outcomes_change_8_for_models_A$bia_visceral_fat_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bia_visceral_fat_change_B_second <- all_outcomes_change_8_for_models_B$bia_visceral_fat_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bia_visceral_fat_change_A_second, na.rm = T)
+sd(bia_visceral_fat_change_A_second, na.rm = T)
+summary(bia_visceral_fat_change_B_second, na.rm = T)
+sd(bia_visceral_fat_change_B_second, na.rm = T)
+t.test(bia_visceral_fat_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bia_visceral_fat_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bia_visceral_fat_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_visceral_fat_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bia_visceral_fat_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#bia_fat_mass_change
+summary(all_outcomes_change_8_for_models_A$bia_fat_mass_change)
+summary(all_outcomes_change_8_for_models_B$bia_fat_mass_change)
+
+difference_in_bia_fat_mass_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bia_fat_mass_change = (bia_fat_mass_change[Diet == "A"] - bia_fat_mass_change[Diet == "B"]))
+View(difference_in_bia_fat_mass_change)
+
+summary(difference_in_bia_fat_mass_change$difference_in_bia_fat_mass_change, na.rm = T)
+mean(difference_in_bia_fat_mass_change$difference_in_bia_fat_mass_change, na.rm = T)
+sd(difference_in_bia_fat_mass_change$difference_in_bia_fat_mass_change, na.rm = T)
+
+bia_fat_mass_change_A <- all_outcomes_change_8_for_models_A$bia_fat_mass_change
+bia_fat_mass_change_B <- all_outcomes_change_8_for_models_B$bia_fat_mass_change
+t.test(bia_fat_mass_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_fat_mass_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_fat_mass_change_A, bia_fat_mass_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(bia_fat_mass_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bia_fat_mass_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bia_fat_mass_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bia_fat_mass_change_A_first <- all_outcomes_change_8_for_models_A$bia_fat_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bia_fat_mass_change_B_first <- all_outcomes_change_8_for_models_B$bia_fat_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bia_fat_mass_change_A_first, na.rm = T)
+summary(bia_fat_mass_change_B_first, na.rm = T)
+t.test(bia_fat_mass_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_fat_mass_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bia_fat_mass_change_A_first,bia_fat_mass_change_B_first)
+t.test(bia_fat_mass_change_A_first, bia_fat_mass_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+t.test(all_outcomes_change_8_for_models_First_diet$bia_fat_mass_change ~ all_outcomes_change_8_for_models_First_diet$Diet_Numeric, alternative = "two.sided", na.rm =T)
+
+#By second diet
+bia_fat_mass_change_A_second <- all_outcomes_change_8_for_models_A$bia_fat_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bia_fat_mass_change_B_second <- all_outcomes_change_8_for_models_B$bia_fat_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bia_fat_mass_change_A_second, na.rm = T)
+sd(bia_fat_mass_change_A_second, na.rm = T)
+summary(bia_fat_mass_change_B_second, na.rm = T)
+sd(bia_fat_mass_change_B_second, na.rm = T)
+t.test(bia_fat_mass_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bia_fat_mass_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bia_fat_mass_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_fat_mass_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bia_fat_mass_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#bia_fat_free_mass_change
+summary(all_outcomes_change_8_for_models_A$bia_fat_free_mass_change)
+summary(all_outcomes_change_8_for_models_B$bia_fat_free_mass_change)
+
+difference_in_bia_fat_free_mass_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bia_fat_free_mass_change = (bia_fat_free_mass_change[Diet == "A"] - bia_fat_free_mass_change[Diet == "B"]))
+View(difference_in_bia_fat_free_mass_change)
+
+Model_Final <- lmer(bia_fat_free_mass_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_bia_fat_free_mass_change$difference_in_bia_fat_free_mass_change, na.rm = T)
+mean(difference_in_bia_fat_free_mass_change$difference_in_bia_fat_free_mass_change, na.rm = T)
+sd(difference_in_bia_fat_free_mass_change$difference_in_bia_fat_free_mass_change, na.rm = T)
+
+bia_fat_free_mass_change_A <- all_outcomes_change_8_for_models_A$bia_fat_free_mass_change
+bia_fat_free_mass_change_B <- all_outcomes_change_8_for_models_B$bia_fat_free_mass_change
+t.test(bia_fat_free_mass_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_fat_free_mass_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_fat_free_mass_change_A, bia_fat_free_mass_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bia_fat_free_mass_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bia_fat_free_mass_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bia_fat_free_mass_change_A_first <- all_outcomes_change_8_for_models_A$bia_fat_free_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bia_fat_free_mass_change_B_first <- all_outcomes_change_8_for_models_B$bia_fat_free_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bia_fat_free_mass_change_A_first, na.rm = T)
+summary(bia_fat_free_mass_change_B_first, na.rm = T)
+t.test(bia_fat_free_mass_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_fat_free_mass_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bia_fat_free_mass_change_A_first,bia_fat_free_mass_change_B_first)
+t.test(bia_fat_free_mass_change_A_first, bia_fat_free_mass_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+bia_fat_free_mass_change_A_second <- all_outcomes_change_8_for_models_A$bia_fat_free_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bia_fat_free_mass_change_B_second <- all_outcomes_change_8_for_models_B$bia_fat_free_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bia_fat_free_mass_change_A_second, na.rm = T)
+sd(bia_fat_free_mass_change_A_second, na.rm = T)
+summary(bia_fat_free_mass_change_B_second, na.rm = T)
+sd(bia_fat_free_mass_change_B_second, na.rm = T)
+t.test(bia_fat_free_mass_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bia_fat_free_mass_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bia_fat_free_mass_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_fat_free_mass_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bia_fat_free_mass_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#bia_tbw_kg_change
+summary(all_outcomes_change_8_for_models_A$bia_tbw_kg_change)
+summary(all_outcomes_change_8_for_models_B$bia_tbw_kg_change)
+
+difference_in_bia_tbw_kg_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bia_tbw_kg_change = (bia_tbw_kg_change[Diet == "A"] - bia_tbw_kg_change[Diet == "B"]))
+View(difference_in_bia_tbw_kg_change)
+
+Model_Final <- lmer(bia_tbw_kg_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_bia_tbw_kg_change$difference_in_bia_tbw_kg_change, na.rm = T)
+mean(difference_in_bia_tbw_kg_change$difference_in_bia_tbw_kg_change, na.rm = T)
+sd(difference_in_bia_tbw_kg_change$difference_in_bia_tbw_kg_change, na.rm = T)
+
+bia_tbw_kg_change_A <- all_outcomes_change_8_for_models_A$bia_tbw_kg_change
+bia_tbw_kg_change_B <- all_outcomes_change_8_for_models_B$bia_tbw_kg_change
+t.test(bia_tbw_kg_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_tbw_kg_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_tbw_kg_change_A, bia_tbw_kg_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bia_tbw_kg_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bia_tbw_kg_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bia_tbw_kg_change_A_first <- all_outcomes_change_8_for_models_A$bia_tbw_kg_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bia_tbw_kg_change_B_first <- all_outcomes_change_8_for_models_B$bia_tbw_kg_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bia_tbw_kg_change_A_first, na.rm = T)
+summary(bia_tbw_kg_change_B_first, na.rm = T)
+t.test(bia_tbw_kg_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_tbw_kg_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bia_tbw_kg_change_A_first,bia_tbw_kg_change_B_first)
+t.test(bia_tbw_kg_change_A_first, bia_tbw_kg_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+bia_tbw_kg_change_A_second <- all_outcomes_change_8_for_models_A$bia_tbw_kg_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bia_tbw_kg_change_B_second <- all_outcomes_change_8_for_models_B$bia_tbw_kg_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bia_tbw_kg_change_A_second, na.rm = T)
+sd(bia_tbw_kg_change_A_second, na.rm = T)
+summary(bia_tbw_kg_change_B_second, na.rm = T)
+sd(bia_tbw_kg_change_B_second, na.rm = T)
+t.test(bia_tbw_kg_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bia_tbw_kg_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bia_tbw_kg_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_tbw_kg_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bia_tbw_kg_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#bia_tbw_pct_change
+summary(all_outcomes_change_8_for_models_A$bia_tbw_pct_change)
+summary(all_outcomes_change_8_for_models_B$bia_tbw_pct_change)
+
+difference_in_bia_tbw_pct_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bia_tbw_pct_change = (bia_tbw_pct_change[Diet == "A"] - bia_tbw_pct_change[Diet == "B"]))
+View(difference_in_bia_tbw_pct_change)
+
+Model_Final <- lmer(bia_tbw_pct_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_bia_tbw_pct_change$difference_in_bia_tbw_pct_change, na.rm = T)
+mean(difference_in_bia_tbw_pct_change$difference_in_bia_tbw_pct_change, na.rm = T)
+sd(difference_in_bia_tbw_pct_change$difference_in_bia_tbw_pct_change, na.rm = T)
+
+bia_tbw_pct_change_A <- all_outcomes_change_8_for_models_A$bia_tbw_pct_change
+bia_tbw_pct_change_B <- all_outcomes_change_8_for_models_B$bia_tbw_pct_change
+t.test(bia_tbw_pct_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_tbw_pct_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_tbw_pct_change_A, bia_tbw_pct_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bia_tbw_pct_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bia_tbw_pct_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bia_tbw_pct_change_A_first <- all_outcomes_change_8_for_models_A$bia_tbw_pct_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bia_tbw_pct_change_B_first <- all_outcomes_change_8_for_models_B$bia_tbw_pct_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bia_tbw_pct_change_A_first, na.rm = T)
+summary(bia_tbw_pct_change_B_first, na.rm = T)
+t.test(bia_tbw_pct_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_tbw_pct_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bia_tbw_pct_change_A_first,bia_tbw_pct_change_B_first)
+t.test(bia_tbw_pct_change_A_first, bia_tbw_pct_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+bia_tbw_pct_change_A_second <- all_outcomes_change_8_for_models_A$bia_tbw_pct_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bia_tbw_pct_change_B_second <- all_outcomes_change_8_for_models_B$bia_tbw_pct_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bia_tbw_pct_change_A_second, na.rm = T)
+sd(bia_tbw_pct_change_A_second, na.rm = T)
+summary(bia_tbw_pct_change_B_second, na.rm = T)
+sd(bia_tbw_pct_change_B_second, na.rm = T)
+t.test(bia_tbw_pct_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bia_tbw_pct_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bia_tbw_pct_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_tbw_pct_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bia_tbw_pct_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#bia_muscle_mass_change
+summary(all_outcomes_change_8_for_models_A$bia_muscle_mass_change)
+summary(all_outcomes_change_8_for_models_B$bia_muscle_mass_change)
+
+difference_in_bia_muscle_mass_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bia_muscle_mass_change = (bia_muscle_mass_change[Diet == "A"] - bia_muscle_mass_change[Diet == "B"]))
+View(difference_in_bia_muscle_mass_change)
+
+Model_Final <- lmer(bia_muscle_mass_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_bia_muscle_mass_change$difference_in_bia_muscle_mass_change, na.rm = T)
+mean(difference_in_bia_muscle_mass_change$difference_in_bia_muscle_mass_change, na.rm = T)
+sd(difference_in_bia_muscle_mass_change$difference_in_bia_muscle_mass_change, na.rm = T)
+
+bia_muscle_mass_change_A <- all_outcomes_change_8_for_models_A$bia_muscle_mass_change
+bia_muscle_mass_change_B <- all_outcomes_change_8_for_models_B$bia_muscle_mass_change
+t.test(bia_muscle_mass_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_muscle_mass_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_muscle_mass_change_A, bia_muscle_mass_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bia_muscle_mass_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bia_muscle_mass_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bia_muscle_mass_change_A_first <- all_outcomes_change_8_for_models_A$bia_muscle_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bia_muscle_mass_change_B_first <- all_outcomes_change_8_for_models_B$bia_muscle_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bia_muscle_mass_change_A_first, na.rm = T)
+summary(bia_muscle_mass_change_B_first, na.rm = T)
+t.test(bia_muscle_mass_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_muscle_mass_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bia_muscle_mass_change_A_first,bia_muscle_mass_change_B_first)
+t.test(bia_muscle_mass_change_A_first, bia_muscle_mass_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+bia_muscle_mass_change_A_second <- all_outcomes_change_8_for_models_A$bia_muscle_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bia_muscle_mass_change_B_second <- all_outcomes_change_8_for_models_B$bia_muscle_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bia_muscle_mass_change_A_second, na.rm = T)
+sd(bia_muscle_mass_change_A_second, na.rm = T)
+summary(bia_muscle_mass_change_B_second, na.rm = T)
+sd(bia_muscle_mass_change_B_second, na.rm = T)
+t.test(bia_muscle_mass_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bia_muscle_mass_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bia_muscle_mass_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_muscle_mass_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bia_muscle_mass_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#bia_bone_mass_change
+summary(all_outcomes_change_8_for_models_A$bia_bone_mass_change)
+summary(all_outcomes_change_8_for_models_B$bia_bone_mass_change)
+
+difference_in_bia_bone_mass_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bia_bone_mass_change = (bia_bone_mass_change[Diet == "A"] - bia_bone_mass_change[Diet == "B"]))
+View(difference_in_bia_bone_mass_change)
+
+Model_Final <- lmer(bia_bone_mass_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_bia_bone_mass_change$difference_in_bia_bone_mass_change, na.rm = T)
+mean(difference_in_bia_bone_mass_change$difference_in_bia_bone_mass_change, na.rm = T)
+sd(difference_in_bia_bone_mass_change$difference_in_bia_bone_mass_change, na.rm = T)
+
+bia_bone_mass_change_A <- all_outcomes_change_8_for_models_A$bia_bone_mass_change
+bia_bone_mass_change_B <- all_outcomes_change_8_for_models_B$bia_bone_mass_change
+t.test(bia_bone_mass_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bone_mass_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bone_mass_change_A, bia_bone_mass_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bia_bone_mass_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bia_bone_mass_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bia_bone_mass_change_A_first <- all_outcomes_change_8_for_models_A$bia_bone_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bia_bone_mass_change_B_first <- all_outcomes_change_8_for_models_B$bia_bone_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bia_bone_mass_change_A_first, na.rm = T)
+summary(bia_bone_mass_change_B_first, na.rm = T)
+t.test(bia_bone_mass_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bone_mass_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bia_bone_mass_change_A_first,bia_bone_mass_change_B_first)
+t.test(bia_bone_mass_change_A_first, bia_bone_mass_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+t.test(all_outcomes_change_8_for_models_First_diet$bia_bone_mass_change ~ all_outcomes_change_8_for_models_First_diet$Diet_Numeric, alternative = "two.sided", na.rm =T)
+
+#By second diet
+bia_bone_mass_change_A_second <- all_outcomes_change_8_for_models_A$bia_bone_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bia_bone_mass_change_B_second <- all_outcomes_change_8_for_models_B$bia_bone_mass_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bia_bone_mass_change_A_second, na.rm = T)
+sd(bia_bone_mass_change_A_second, na.rm = T)
+summary(bia_bone_mass_change_B_second, na.rm = T)
+sd(bia_bone_mass_change_B_second, na.rm = T)
+t.test(bia_bone_mass_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bia_bone_mass_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bia_bone_mass_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bia_bone_mass_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(bia_bone_mass_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#sbp_change
+summary(all_outcomes_change_8_for_models_A$sbp_change)
+sd(all_outcomes_change_8_for_models_A$sbp_change, na.rm = T)
+summary(all_outcomes_change_8_for_models_B$sbp_change)
+sd(all_outcomes_change_8_for_models_B$sbp_change)
+sd(all_outcomes_change_8_for_models_B$sbp_change, na.rm = T)
+
+difference_in_sbp_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_sbp_change = (sbp_change[Diet == "A"] - sbp_change[Diet == "B"]))
+View(difference_in_sbp_change)
+
+Model_Final <- lmer(sbp_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_sbp_change$difference_in_sbp_change, na.rm = T)
+mean(difference_in_sbp_change$difference_in_sbp_change, na.rm = T)
+sd(difference_in_sbp_change$difference_in_sbp_change, na.rm = T)
+
+sbp_change_A <- all_outcomes_change_8_for_models_A$sbp_change
+sbp_change_B <- all_outcomes_change_8_for_models_B$sbp_change
+t.test(sbp_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(sbp_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(sbp_change_A, sbp_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$sbp_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$sbp_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+sbp_change_A_first <- all_outcomes_change_8_for_models_A$sbp_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+sbp_change_B_first <- all_outcomes_change_8_for_models_B$sbp_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(sbp_change_A_first, na.rm = T)
+summary(sbp_change_B_first, na.rm = T)
+t.test(sbp_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(sbp_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(sbp_change_A_first,sbp_change_B_first)
+t.test(sbp_change_A_first, sbp_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+sbp_change_A_second <- all_outcomes_change_8_for_models_A$sbp_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+sbp_change_B_second <- all_outcomes_change_8_for_models_B$sbp_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(sbp_change_A_second, na.rm = T)
+sd(sbp_change_A_second, na.rm = T)
+summary(sbp_change_B_second, na.rm = T)
+sd(sbp_change_B_second, na.rm = T)
+t.test(sbp_change_A_second, mu = 0, alternative = "two.sided")
+t.test(sbp_change_B_second, mu = 0, alternative = "two.sided")
+t.test(sbp_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(sbp_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(sbp_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#dbp_change
+summary(all_outcomes_change_8_for_models_A$dbp_change)
+summary(all_outcomes_change_8_for_models_B$dbp_change)
+
+difference_in_dbp_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_dbp_change = (dbp_change[Diet == "A"] - dbp_change[Diet == "B"]))
+View(difference_in_dbp_change)
+
+Model_Final <- lmer(dbp_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_dbp_change$difference_in_dbp_change, na.rm = T)
+mean(difference_in_dbp_change$difference_in_dbp_change, na.rm = T)
+sd(difference_in_dbp_change$difference_in_dbp_change, na.rm = T)
+
+dbp_change_A <- all_outcomes_change_8_for_models_A$dbp_change
+dbp_change_B <- all_outcomes_change_8_for_models_B$dbp_change
+t.test(dbp_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(dbp_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(dbp_change_A, dbp_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$dbp_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$dbp_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+dbp_change_A_first <- all_outcomes_change_8_for_models_A$dbp_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+dbp_change_B_first <- all_outcomes_change_8_for_models_B$dbp_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(dbp_change_A_first, na.rm = T)
+summary(dbp_change_B_first, na.rm = T)
+t.test(dbp_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(dbp_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(dbp_change_A_first,dbp_change_B_first)
+t.test(dbp_change_A_first, dbp_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+dbp_change_A_second <- all_outcomes_change_8_for_models_A$dbp_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+dbp_change_B_second <- all_outcomes_change_8_for_models_B$dbp_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(dbp_change_A_second, na.rm = T)
+sd(dbp_change_A_second, na.rm = T)
+summary(dbp_change_B_second, na.rm = T)
+sd(dbp_change_B_second, na.rm = T)
+t.test(dbp_change_A_second, mu = 0, alternative = "two.sided")
+t.test(dbp_change_B_second, mu = 0, alternative = "two.sided")
+t.test(dbp_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(dbp_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(dbp_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#hr_change
+summary(all_outcomes_change_8_for_models_A$hr_change)
+summary(all_outcomes_change_8_for_models_B$hr_change)
+
+difference_in_hr_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_hr_change = (hr_change[Diet == "A"] - hr_change[Diet == "B"]))
+View(difference_in_hr_change)
+
+Model_Final <- lmer(hr_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_hr_change$difference_in_hr_change, na.rm = T)
+mean(difference_in_hr_change$difference_in_hr_change, na.rm = T)
+sd(difference_in_hr_change$difference_in_hr_change, na.rm = T)
+
+hr_change_A <- all_outcomes_change_8_for_models_A$hr_change
+hr_change_B <- all_outcomes_change_8_for_models_B$hr_change
+t.test(hr_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hr_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hr_change_A, hr_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$hr_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$hr_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+hr_change_A_first <- all_outcomes_change_8_for_models_A$hr_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+hr_change_B_first <- all_outcomes_change_8_for_models_B$hr_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(hr_change_A_first, na.rm = T)
+summary(hr_change_B_first, na.rm = T)
+t.test(hr_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hr_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(hr_change_A_first,hr_change_B_first)
+t.test(hr_change_A_first, hr_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+hr_change_A_second <- all_outcomes_change_8_for_models_A$hr_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+hr_change_B_second <- all_outcomes_change_8_for_models_B$hr_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(hr_change_A_second, na.rm = T)
+sd(hr_change_A_second, na.rm = T)
+summary(hr_change_B_second, na.rm = T)
+sd(hr_change_B_second, na.rm = T)
+t.test(hr_change_A_second, mu = 0, alternative = "two.sided")
+t.test(hr_change_B_second, mu = 0, alternative = "two.sided")
+t.test(hr_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hr_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(hr_change ~Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#bilirubin_change
+summary(all_outcomes_change_8_for_models_A$bilirubin_change)
+summary(all_outcomes_change_8_for_models_B$bilirubin_change)
+
+difference_in_bilirubin_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_bilirubin_change = (bilirubin_change[Diet == "A"] - bilirubin_change[Diet == "B"]))
+View(difference_in_bilirubin_change)
+
+Model_Final <- lmer(bilirubin_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_bilirubin_change$difference_in_bilirubin_change, na.rm = T)
+mean(difference_in_bilirubin_change$difference_in_bilirubin_change, na.rm = T)
+sd(difference_in_bilirubin_change$difference_in_bilirubin_change, na.rm = T)
+
+bilirubin_change_A <- all_outcomes_change_8_for_models_A$bilirubin_change
+bilirubin_change_B <- all_outcomes_change_8_for_models_B$bilirubin_change
+t.test(bilirubin_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bilirubin_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bilirubin_change_A, bilirubin_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$bilirubin_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$bilirubin_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+bilirubin_change_A_first <- all_outcomes_change_8_for_models_A$bilirubin_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+bilirubin_change_B_first <- all_outcomes_change_8_for_models_B$bilirubin_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(bilirubin_change_A_first, na.rm = T)
+summary(bilirubin_change_B_first, na.rm = T)
+t.test(bilirubin_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bilirubin_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(bilirubin_change_A_first,bilirubin_change_B_first)
+t.test(bilirubin_change_A_first, bilirubin_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+bilirubin_change_A_second <- all_outcomes_change_8_for_models_A$bilirubin_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+bilirubin_change_B_second <- all_outcomes_change_8_for_models_B$bilirubin_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(bilirubin_change_A_second, na.rm = T)
+sd(bilirubin_change_A_second, na.rm = T)
+summary(bilirubin_change_B_second, na.rm = T)
+sd(bilirubin_change_B_second, na.rm = T)
+t.test(bilirubin_change_A_second, mu = 0, alternative = "two.sided")
+t.test(bilirubin_change_B_second, mu = 0, alternative = "two.sided")
+t.test(bilirubin_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(bilirubin_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#alkaline_phosphatase_change
+summary(all_outcomes_change_8_for_models_A$alkaline_phosphatase_change)
+summary(all_outcomes_change_8_for_models_B$alkaline_phosphatase_change)
+
+difference_in_alkaline_phosphatase_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_alkaline_phosphatase_change = (alkaline_phosphatase_change[Diet == "A"] - alkaline_phosphatase_change[Diet == "B"]))
+View(difference_in_alkaline_phosphatase_change)
+
+Model_Final <- lmer(alkaline_phosphatase_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_alkaline_phosphatase_change$difference_in_alkaline_phosphatase_change, na.rm = T)
+mean(difference_in_alkaline_phosphatase_change$difference_in_alkaline_phosphatase_change, na.rm = T)
+sd(difference_in_alkaline_phosphatase_change$difference_in_alkaline_phosphatase_change, na.rm = T)
+
+alkaline_phosphatase_change_A <- all_outcomes_change_8_for_models_A$alkaline_phosphatase_change
+alkaline_phosphatase_change_B <- all_outcomes_change_8_for_models_B$alkaline_phosphatase_change
+t.test(alkaline_phosphatase_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(alkaline_phosphatase_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(alkaline_phosphatase_change_A, alkaline_phosphatase_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$alkaline_phosphatase_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$alkaline_phosphatase_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+alkaline_phosphatase_change_A_first <- all_outcomes_change_8_for_models_A$alkaline_phosphatase_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+alkaline_phosphatase_change_B_first <- all_outcomes_change_8_for_models_B$alkaline_phosphatase_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(alkaline_phosphatase_change_A_first, na.rm = T)
+summary(alkaline_phosphatase_change_B_first, na.rm = T)
+t.test(alkaline_phosphatase_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(alkaline_phosphatase_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(alkaline_phosphatase_change_A_first,alkaline_phosphatase_change_B_first)
+t.test(alkaline_phosphatase_change_A_first, alkaline_phosphatase_change_B_first, alternative = "two.sided", na.rm =T)
+
+#By second diet
+alkaline_phosphatase_change_A_second <- all_outcomes_change_8_for_models_A$alkaline_phosphatase_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+alkaline_phosphatase_change_B_second <- all_outcomes_change_8_for_models_B$alkaline_phosphatase_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(alkaline_phosphatase_change_A_second, na.rm = T)
+sd(alkaline_phosphatase_change_A_second, na.rm = T)
+summary(alkaline_phosphatase_change_B_second, na.rm = T)
+sd(alkaline_phosphatase_change_B_second, na.rm = T)
+t.test(alkaline_phosphatase_change_A_second, mu = 0, alternative = "two.sided")
+t.test(alkaline_phosphatase_change_B_second, mu = 0, alternative = "two.sided")
+t.test(alkaline_phosphatase_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(alkaline_phosphatase_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#alanine_transaminase_change
+summary(all_outcomes_change_8_for_models_A$alanine_transaminase_change)
+summary(all_outcomes_change_8_for_models_B$alanine_transaminase_change)
+
+difference_in_alanine_transaminase_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_alanine_transaminase_change = (alanine_transaminase_change[Diet == "A"] - alanine_transaminase_change[Diet == "B"]))
+View(difference_in_alanine_transaminase_change)
+
+Model_Final <- lmer(alanine_transaminase_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_alanine_transaminase_change$difference_in_alanine_transaminase_change, na.rm = T)
+mean(difference_in_alanine_transaminase_change$difference_in_alanine_transaminase_change, na.rm = T)
+sd(difference_in_alanine_transaminase_change$difference_in_alanine_transaminase_change, na.rm = T)
+
+alanine_transaminase_change_A <- all_outcomes_change_8_for_models_A$alanine_transaminase_change
+alanine_transaminase_change_B <- all_outcomes_change_8_for_models_B$alanine_transaminase_change
+t.test(alanine_transaminase_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(alanine_transaminase_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(alanine_transaminase_change_A, alanine_transaminase_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$alanine_transaminase_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$alanine_transaminase_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+alanine_transaminase_change_A_first <- all_outcomes_change_8_for_models_A$alanine_transaminase_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+alanine_transaminase_change_B_first <- all_outcomes_change_8_for_models_B$alanine_transaminase_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(alanine_transaminase_change_A_first, na.rm = T)
+summary(alanine_transaminase_change_B_first, na.rm = T)
+t.test(alanine_transaminase_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(alanine_transaminase_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(alanine_transaminase_change_A_first,alanine_transaminase_change_B_first)
+t.test(alanine_transaminase_change_A_first, alanine_transaminase_change_B_first, alternative = "two.sided", na.rm =T)
+
+#By second diet
+alanine_transaminase_change_A_second <- all_outcomes_change_8_for_models_A$alanine_transaminase_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+alanine_transaminase_change_B_second <- all_outcomes_change_8_for_models_B$alanine_transaminase_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(alanine_transaminase_change_A_second, na.rm = T)
+sd(alanine_transaminase_change_A_second, na.rm = T)
+summary(alanine_transaminase_change_B_second, na.rm = T)
+sd(alanine_transaminase_change_B_second, na.rm = T)
+t.test(alanine_transaminase_change_A_second, mu = 0, alternative = "two.sided")
+t.test(alanine_transaminase_change_B_second, mu = 0, alternative = "two.sided")
+t.test(alanine_transaminase_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(alanine_transaminase_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#albumin_change
+summary(all_outcomes_change_8_for_models_A$albumin_change)
+summary(all_outcomes_change_8_for_models_B$albumin_change)
+
+difference_in_albumin_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_albumin_change = (albumin_change[Diet == "A"] - albumin_change[Diet == "B"]))
+View(difference_in_albumin_change)
+
+Model_Final <- lmer(albumin_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_albumin_change$difference_in_albumin_change, na.rm = T)
+mean(difference_in_albumin_change$difference_in_albumin_change, na.rm = T)
+sd(difference_in_albumin_change$difference_in_albumin_change, na.rm = T)
+
+albumin_change_A <- all_outcomes_change_8_for_models_A$albumin_change
+albumin_change_B <- all_outcomes_change_8_for_models_B$albumin_change
+t.test(albumin_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(albumin_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(albumin_change_A, albumin_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$albumin_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$albumin_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+albumin_change_A_first <- all_outcomes_change_8_for_models_A$albumin_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+albumin_change_B_first <- all_outcomes_change_8_for_models_B$albumin_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(albumin_change_A_first, na.rm = T)
+summary(albumin_change_B_first, na.rm = T)
+t.test(albumin_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(albumin_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(alanine_transaminase_change_A_first,alanine_transaminase_change_B_first)
+t.test(albumin_change_A_first, albumin_change_B_first, alternative = "two.sided", na.rm =T)
+t.test(all_outcomes_change_8_for_models_First_diet$albumin_change ~ all_outcomes_change_8_for_models_First_diet$Diet_Numeric, alternative = "two.sided", na.rm =T)
+
+#By second diet
+albumin_change_A_second <- all_outcomes_change_8_for_models_A$albumin_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+albumin_change_B_second <- all_outcomes_change_8_for_models_B$albumin_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(albumin_change_A_second, na.rm = T)
+sd(albumin_change_A_second, na.rm = T)
+summary(albumin_change_B_second, na.rm = T)
+sd(albumin_change_B_second, na.rm = T)
+t.test(albumin_change_A_second, mu = 0, alternative = "two.sided")
+t.test(albumin_change_B_second, mu = 0, alternative = "two.sided")
+t.test(albumin_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(albumin_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#hba1c_change
+summary(all_outcomes_change_8_for_models_A$hba1c_change)
+summary(all_outcomes_change_8_for_models_B$hba1c_change)
+
+difference_in_hba1c_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_hba1c_change = (hba1c_change[Diet == "A"] - hba1c_change[Diet == "B"]))
+View(difference_in_hba1c_change)
+
+Model_Final <- lmer(hba1c_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_hba1c_change$difference_in_hba1c_change, na.rm = T)
+mean(difference_in_hba1c_change$difference_in_hba1c_change, na.rm = T)
+sd(difference_in_hba1c_change$difference_in_hba1c_change, na.rm = T)
+
+hba1c_change_A <- all_outcomes_change_8_for_models_A$hba1c_change
+hba1c_change_B <- all_outcomes_change_8_for_models_B$hba1c_change
+t.test(hba1c_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hba1c_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hba1c_change_A, hba1c_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$hba1c_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$hba1c_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+hba1c_change_A_first <- all_outcomes_change_8_for_models_A$hba1c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+hba1c_change_B_first <- all_outcomes_change_8_for_models_B$hba1c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(hba1c_change_A_first, na.rm = T)
+summary(hba1c_change_B_first, na.rm = T)
+t.test(hba1c_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hba1c_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(hba1c_change_A_first,hba1c_change_B_first)
+t.test(hba1c_change_A_first, hba1c_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+hba1c_change_A_second <- all_outcomes_change_8_for_models_A$hba1c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+hba1c_change_B_second <- all_outcomes_change_8_for_models_B$hba1c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(hba1c_change_A_second, na.rm = T)
+sd(hba1c_change_A_second, na.rm = T)
+summary(hba1c_change_B_second, na.rm = T)
+sd(hba1c_change_B_second, na.rm = T)
+t.test(hba1c_change_A_second, mu = 0, alternative = "two.sided")
+t.test(hba1c_change_B_second, mu = 0, alternative = "two.sided")
+t.test(hba1c_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hba1c_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#glucose_change
+summary(all_outcomes_change_8_for_models_A$glucose_change)
+summary(all_outcomes_change_8_for_models_B$glucose_change)
+
+difference_in_glucose_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_glucose_change = (glucose_change[Diet == "A"] - glucose_change[Diet == "B"]))
+View(difference_in_glucose_change)
+
+Model_Final <- lmer(glucose_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_glucose_change$difference_in_glucose_change, na.rm = T)
+mean(difference_in_glucose_change$difference_in_glucose_change, na.rm = T)
+sd(difference_in_glucose_change$difference_in_glucose_change, na.rm = T)
+
+glucose_change_A <- all_outcomes_change_8_for_models_A$glucose_change
+glucose_change_B <- all_outcomes_change_8_for_models_B$glucose_change
+t.test(glucose_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(glucose_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(glucose_change_A, glucose_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$glucose_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$glucose_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+glucose_change_A_first <- all_outcomes_change_8_for_models_A$glucose_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+glucose_change_B_first <- all_outcomes_change_8_for_models_B$glucose_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(glucose_change_A_first, na.rm = T)
+summary(glucose_change_B_first, na.rm = T)
+t.test(glucose_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(glucose_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(glucose_change_A_first,glucose_change_B_first)
+t.test(glucose_change_A_first, glucose_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+t.test(all_outcomes_change_8_for_models_First_diet$glucose_change ~ all_outcomes_change_8_for_models_First_diet$Diet_Numeric, alternative = "two.sided", na.rm =T)
+
+#By second diet
+glucose_change_A_second <- all_outcomes_change_8_for_models_A$glucose_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+glucose_change_B_second <- all_outcomes_change_8_for_models_B$glucose_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(glucose_change_A_second, na.rm = T)
+sd(glucose_change_A_second, na.rm = T)
+summary(glucose_change_B_second, na.rm = T)
+sd(glucose_change_B_second, na.rm = T)
+t.test(glucose_change_A_second, mu = 0, alternative = "two.sided")
+t.test(glucose_change_B_second, mu = 0, alternative = "two.sided")
+t.test(glucose_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(glucose_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#cholesterol_change
+summary(all_outcomes_change_8_for_models_A$cholesterol_change)
+summary(all_outcomes_change_8_for_models_B$cholesterol_change)
+
+difference_in_cholesterol_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_cholesterol_change = (cholesterol_change[Diet == "A"] - cholesterol_change[Diet == "B"]))
+View(difference_in_cholesterol_change)
+
+Model_Final <- lmer(cholesterol_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_cholesterol_change$difference_in_cholesterol_change, na.rm = T)
+mean(difference_in_cholesterol_change$difference_in_cholesterol_change, na.rm = T)
+sd(difference_in_cholesterol_change$difference_in_cholesterol_change, na.rm = T)
+
+cholesterol_change_A <- all_outcomes_change_8_for_models_A$cholesterol_change
+cholesterol_change_B <- all_outcomes_change_8_for_models_B$cholesterol_change
+t.test(cholesterol_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(cholesterol_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(cholesterol_change_A, cholesterol_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$cholesterol_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$cholesterol_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+cholesterol_change_A_first <- all_outcomes_change_8_for_models_A$cholesterol_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+cholesterol_change_B_first <- all_outcomes_change_8_for_models_B$cholesterol_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(cholesterol_change_A_first, na.rm = T)
+summary(cholesterol_change_B_first, na.rm = T)
+t.test(cholesterol_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(cholesterol_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(cholesterol_change_A_first,cholesterol_change_B_first)
+t.test(cholesterol_change_A_first, cholesterol_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+cholesterol_change_A_second <- all_outcomes_change_8_for_models_A$cholesterol_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+cholesterol_change_B_second <- all_outcomes_change_8_for_models_B$cholesterol_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(cholesterol_change_A_second, na.rm = T)
+sd(cholesterol_change_A_second, na.rm = T)
+summary(cholesterol_change_B_second, na.rm = T)
+sd(cholesterol_change_B_second, na.rm = T)
+t.test(cholesterol_change_A_second, mu = 0, alternative = "two.sided")
+t.test(cholesterol_change_B_second, mu = 0, alternative = "two.sided")
+t.test(cholesterol_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(cholesterol_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#chol_hdl_ratio_change
+summary(all_outcomes_change_8_for_models_A$chol_hdl_ratio_change)
+summary(all_outcomes_change_8_for_models_B$chol_hdl_ratio_change)
+
+difference_in_chol_hdl_ratio_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_chol_hdl_ratio_change = (chol_hdl_ratio_change[Diet == "A"] - chol_hdl_ratio_change[Diet == "B"]))
+View(difference_in_chol_hdl_ratio_change)
+
+Model_Final <- lmer(chol_hdl_ratio_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_chol_hdl_ratio_change$difference_in_chol_hdl_ratio_change, na.rm = T)
+mean(difference_in_chol_hdl_ratio_change$difference_in_chol_hdl_ratio_change, na.rm = T)
+sd(difference_in_chol_hdl_ratio_change$difference_in_chol_hdl_ratio_change, na.rm = T)
+
+chol_hdl_ratio_change_A <- all_outcomes_change_8_for_models_A$chol_hdl_ratio_change
+chol_hdl_ratio_change_B <- all_outcomes_change_8_for_models_B$chol_hdl_ratio_change
+t.test(chol_hdl_ratio_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(chol_hdl_ratio_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(chol_hdl_ratio_change_A, chol_hdl_ratio_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$chol_hdl_ratio_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$chol_hdl_ratio_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+chol_hdl_ratio_change_A_first <- all_outcomes_change_8_for_models_A$chol_hdl_ratio_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+chol_hdl_ratio_change_B_first <- all_outcomes_change_8_for_models_B$chol_hdl_ratio_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(chol_hdl_ratio_change_A_first, na.rm = T)
+summary(chol_hdl_ratio_change_B_first, na.rm = T)
+t.test(chol_hdl_ratio_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(chol_hdl_ratio_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(chol_hdl_ratio_change_A_first,chol_hdl_ratio_change_B_first)
+t.test(chol_hdl_ratio_change_A_first, chol_hdl_ratio_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+chol_hdl_ratio_change_A_second <- all_outcomes_change_8_for_models_A$chol_hdl_ratio_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+chol_hdl_ratio_change_B_second <- all_outcomes_change_8_for_models_B$chol_hdl_ratio_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(chol_hdl_ratio_change_A_second, na.rm = T)
+sd(chol_hdl_ratio_change_A_second, na.rm = T)
+summary(chol_hdl_ratio_change_B_second, na.rm = T)
+sd(chol_hdl_ratio_change_B_second, na.rm = T)
+t.test(chol_hdl_ratio_change_A_second, mu = 0, alternative = "two.sided")
+t.test(chol_hdl_ratio_change_B_second, mu = 0, alternative = "two.sided")
+t.test(chol_hdl_ratio_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(chol_hdl_ratio_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#hdl_c_change
+summary(all_outcomes_change_8_for_models_A$hdl_c_change)
+summary(all_outcomes_change_8_for_models_B$hdl_c_change)
+
+difference_in_hdl_c_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_hdl_c_change = (hdl_c_change[Diet == "A"] - hdl_c_change[Diet == "B"]))
+View(difference_in_hdl_c_change)
+
+Model_Final <- lmer(hdl_c_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_hdl_c_change$difference_in_hdl_c_change, na.rm = T)
+mean(difference_in_hdl_c_change$difference_in_hdl_c_change, na.rm = T)
+sd(difference_in_hdl_c_change$difference_in_hdl_c_change, na.rm = T)
+
+hdl_c_change_A <- all_outcomes_change_8_for_models_A$hdl_c_change
+hdl_c_change_B <- all_outcomes_change_8_for_models_B$hdl_c_change
+t.test(hdl_c_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hdl_c_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hdl_c_change_A, hdl_c_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$hdl_c_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$hdl_c_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+hdl_c_change_A_first <- all_outcomes_change_8_for_models_A$hdl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+hdl_c_change_B_first <- all_outcomes_change_8_for_models_B$hdl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(hdl_c_change_A_first, na.rm = T)
+summary(hdl_c_change_B_first, na.rm = T)
+t.test(hdl_c_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hdl_c_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(hdl_c_change_A_first,hdl_c_change_B_first)
+t.test(hdl_c_change_A_first, hdl_c_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+hdl_c_change_A_second <- all_outcomes_change_8_for_models_A$hdl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+hdl_c_change_B_second <- all_outcomes_change_8_for_models_B$hdl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(hdl_c_change_A_second, na.rm = T)
+sd(hdl_c_change_A_second, na.rm = T)
+summary(hdl_c_change_B_second, na.rm = T)
+sd(hdl_c_change_B_second, na.rm = T)
+t.test(hdl_c_change_A_second, mu = 0, alternative = "two.sided")
+t.test(hdl_c_change_B_second, mu = 0, alternative = "two.sided")
+t.test(hdl_c_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(hdl_c_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#ldl_c_change
+summary(all_outcomes_change_8_for_models_A$ldl_c_change)
+summary(all_outcomes_change_8_for_models_B$ldl_c_change)
+
+difference_in_ldl_c_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_ldl_c_change = (ldl_c_change[Diet == "A"] - ldl_c_change[Diet == "B"]))
+View(difference_in_ldl_c_change)
+
+Model_Final <- lmer(ldl_c_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_ldl_c_change$difference_in_ldl_c_change, na.rm = T)
+mean(difference_in_ldl_c_change$difference_in_ldl_c_change, na.rm = T)
+sd(difference_in_ldl_c_change$difference_in_ldl_c_change, na.rm = T)
+
+ldl_c_change_A <- all_outcomes_change_8_for_models_A$ldl_c_change
+ldl_c_change_B <- all_outcomes_change_8_for_models_B$ldl_c_change
+t.test(ldl_c_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(ldl_c_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(ldl_c_change_A, ldl_c_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$ldl_c_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$ldl_c_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+ldl_c_change_A_first <- all_outcomes_change_8_for_models_A$ldl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+ldl_c_change_B_first <- all_outcomes_change_8_for_models_B$ldl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(ldl_c_change_A_first, na.rm = T)
+summary(ldl_c_change_B_first, na.rm = T)
+t.test(ldl_c_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(ldl_c_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(ldl_c_change_A_first,ldl_c_change_B_first)
+t.test(ldl_c_change_A_first, ldl_c_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+ldl_c_change_A_second <- all_outcomes_change_8_for_models_A$ldl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+ldl_c_change_B_second <- all_outcomes_change_8_for_models_B$ldl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(ldl_c_change_A_second, na.rm = T)
+sd(ldl_c_change_A_second, na.rm = T)
+summary(ldl_c_change_B_second, na.rm = T)
+sd(ldl_c_change_B_second, na.rm = T)
+t.test(ldl_c_change_A_second, mu = 0, alternative = "two.sided")
+t.test(ldl_c_change_B_second, mu = 0, alternative = "two.sided")
+t.test(ldl_c_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(ldl_c_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#non_hdl_c_change
+summary(all_outcomes_change_8_for_models_A$non_hdl_c_change)
+summary(all_outcomes_change_8_for_models_B$non_hdl_c_change)
+
+difference_in_non_hdl_c_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_non_hdl_c_change = (non_hdl_c_change[Diet == "A"] - non_hdl_c_change[Diet == "B"]))
+View(difference_in_non_hdl_c_change)
+
+Model_Final <- lmer(non_hdl_c_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_non_hdl_c_change$difference_in_non_hdl_c_change, na.rm = T)
+mean(difference_in_non_hdl_c_change$difference_in_non_hdl_c_change, na.rm = T)
+sd(difference_in_non_hdl_c_change$difference_in_non_hdl_c_change, na.rm = T)
+
+non_hdl_c_change_A <- all_outcomes_change_8_for_models_A$non_hdl_c_change
+non_hdl_c_change_B <- all_outcomes_change_8_for_models_B$non_hdl_c_change
+t.test(non_hdl_c_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(non_hdl_c_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(non_hdl_c_change_A, non_hdl_c_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$non_hdl_c_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$non_hdl_c_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+non_hdl_c_change_A_first <- all_outcomes_change_8_for_models_A$non_hdl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+non_hdl_c_change_B_first <- all_outcomes_change_8_for_models_B$non_hdl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(non_hdl_c_change_A_first, na.rm = T)
+summary(non_hdl_c_change_B_first, na.rm = T)
+t.test(non_hdl_c_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(non_hdl_c_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(non_hdl_c_change_A_first,non_hdl_c_change_B_first)
+t.test(non_hdl_c_change_A_first, non_hdl_c_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+non_hdl_c_change_A_second <- all_outcomes_change_8_for_models_A$non_hdl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+non_hdl_c_change_B_second <- all_outcomes_change_8_for_models_B$non_hdl_c_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(non_hdl_c_change_A_second, na.rm = T)
+sd(non_hdl_c_change_A_second, na.rm = T)
+summary(non_hdl_c_change_B_second, na.rm = T)
+sd(non_hdl_c_change_B_second, na.rm = T)
+t.test(non_hdl_c_change_A_second, mu = 0, alternative = "two.sided")
+t.test(non_hdl_c_change_B_second, mu = 0, alternative = "two.sided")
+t.test(non_hdl_c_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(non_hdl_c_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#triglycerides_change
+summary(all_outcomes_change_8_for_models_A$triglycerides_change)
+summary(all_outcomes_change_8_for_models_B$triglycerides_change)
+
+difference_in_triglycerides_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_triglycerides_change = (triglycerides_change[Diet == "A"] - triglycerides_change[Diet == "B"]))
+View(difference_in_triglycerides_change)
+
+Model_Final <- lmer(triglycerides_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_triglycerides_change$difference_in_triglycerides_change, na.rm = T)
+mean(difference_in_triglycerides_change$difference_in_triglycerides_change, na.rm = T)
+sd(difference_in_triglycerides_change$difference_in_triglycerides_change, na.rm = T)
+
+triglycerides_change_A <- all_outcomes_change_8_for_models_A$triglycerides_change
+triglycerides_change_B <- all_outcomes_change_8_for_models_B$triglycerides_change
+t.test(triglycerides_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(triglycerides_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(triglycerides_change_A, triglycerides_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$triglycerides_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$triglycerides_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+triglycerides_change_A_first <- all_outcomes_change_8_for_models_A$triglycerides_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+triglycerides_change_B_first <- all_outcomes_change_8_for_models_B$triglycerides_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(triglycerides_change_A_first, na.rm = T)
+summary(triglycerides_change_B_first, na.rm = T)
+t.test(triglycerides_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(triglycerides_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(triglycerides_change_A_first,triglycerides_change_B_first)
+t.test(triglycerides_change_A_first, triglycerides_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+triglycerides_change_A_second <- all_outcomes_change_8_for_models_A$triglycerides_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+triglycerides_change_B_second <- all_outcomes_change_8_for_models_B$triglycerides_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(triglycerides_change_A_second, na.rm = T)
+sd(triglycerides_change_A_second, na.rm = T)
+summary(triglycerides_change_B_second, na.rm = T)
+sd(triglycerides_change_B_second, na.rm = T)
+t.test(triglycerides_change_A_second, mu = 0, alternative = "two.sided")
+t.test(triglycerides_change_B_second, mu = 0, alternative = "two.sided")
+t.test(triglycerides_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(triglycerides_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#c_reactive_protein_change
+summary(all_outcomes_change_8_for_models_A$c_reactive_protein_change)
+summary(all_outcomes_change_8_for_models_B$c_reactive_protein_change)
+
+difference_in_c_reactive_protein_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_c_reactive_protein_change = (c_reactive_protein_change[Diet == "A"] - c_reactive_protein_change[Diet == "B"]))
+View(difference_in_c_reactive_protein_change)
+
+Model_Final <- lmer(c_reactive_protein_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+summary(difference_in_c_reactive_protein_change$difference_in_c_reactive_protein_change, na.rm = T)
+mean(difference_in_c_reactive_protein_change$difference_in_c_reactive_protein_change, na.rm = T)
+sd(difference_in_c_reactive_protein_change$difference_in_c_reactive_protein_change, na.rm = T)
+
+c_reactive_protein_change_A <- all_outcomes_change_8_for_models_A$c_reactive_protein_change
+c_reactive_protein_change_B <- all_outcomes_change_8_for_models_B$c_reactive_protein_change
+t.test(c_reactive_protein_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(c_reactive_protein_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(c_reactive_protein_change_A, c_reactive_protein_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$c_reactive_protein_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$c_reactive_protein_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+c_reactive_protein_change_A_first <- all_outcomes_change_8_for_models_A$c_reactive_protein_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+c_reactive_protein_change_B_first <- all_outcomes_change_8_for_models_B$c_reactive_protein_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(c_reactive_protein_change_A_first, na.rm = T)
+summary(c_reactive_protein_change_B_first, na.rm = T)
+t.test(c_reactive_protein_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(c_reactive_protein_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(c_reactive_protein_change_A_first,c_reactive_protein_change_B_first)
+t.test(c_reactive_protein_change_A_first, c_reactive_protein_change_B_first, alternative = "two.sided", na.rm =T)
+
+#By second diet
+c_reactive_protein_change_A_second <- all_outcomes_change_8_for_models_A$c_reactive_protein_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+c_reactive_protein_change_B_second <- all_outcomes_change_8_for_models_B$c_reactive_protein_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(c_reactive_protein_change_A_second, na.rm = T)
+sd(c_reactive_protein_change_A_second, na.rm = T)
+summary(c_reactive_protein_change_B_second, na.rm = T)
+sd(c_reactive_protein_change_B_second, na.rm = T)
+t.test(c_reactive_protein_change_A_second, mu = 0, alternative = "two.sided")
+t.test(c_reactive_protein_change_B_second, mu = 0, alternative = "two.sided")
+t.test(c_reactive_protein_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(c_reactive_protein_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+
+#pof_food_available_change
+summary(all_outcomes_change_8_for_models_A$pof_food_available_change)
+summary(all_outcomes_change_8_for_models_B$pof_food_available_change)
+
+difference_in_pof_food_available_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_pof_food_available_change = (pof_food_available_change[Diet == "A"] - pof_food_available_change[Diet == "B"]))
+View(difference_in_pof_food_available_change)
+
+summary(difference_in_pof_food_available_change$difference_in_pof_food_available_change, na.rm = T)
+mean(difference_in_pof_food_available_change$difference_in_pof_food_available_change, na.rm = T)
+sd(difference_in_pof_food_available_change$difference_in_pof_food_available_change, na.rm = T)
+
+pof_food_available_change_A <- all_outcomes_change_8_for_models_A$pof_food_available_change
+pof_food_available_change_B <- all_outcomes_change_8_for_models_B$pof_food_available_change
+t.test(pof_food_available_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_available_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_available_change_A, pof_food_available_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(pof_food_available_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$pof_food_available_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$pof_food_available_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+pof_food_available_change_A_first <- all_outcomes_change_8_for_models_A$pof_food_available_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+pof_food_available_change_B_first <- all_outcomes_change_8_for_models_B$pof_food_available_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(pof_food_available_change_A_first, na.rm = T)
+sd(pof_food_available_change_A_first, na.rm = T)
+summary(pof_food_available_change_B_first, na.rm = T)
+sd(pof_food_available_change_B_first, na.rm = T)
+t.test(pof_food_available_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_available_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(pof_food_available_change_A_first,pof_food_available_change_B_first)
+t.test(pof_food_available_change_A_first, pof_food_available_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+pof_food_available_change_A_second <- all_outcomes_change_8_for_models_A$pof_food_available_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+pof_food_available_change_B_second <- all_outcomes_change_8_for_models_B$pof_food_available_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(pof_food_available_change_A_second, na.rm = T)
+sd(pof_food_available_change_A_second, na.rm = T)
+summary(pof_food_available_change_B_second, na.rm = T)
+sd(pof_food_available_change_B_second, na.rm = T)
+t.test(pof_food_available_change_A_second, mu = 0, alternative = "two.sided")
+t.test(pof_food_available_change_B_second, mu = 0, alternative = "two.sided")
+t.test(pof_food_available_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_available_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(pof_food_available_change ~ Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#pof_food_present_change
+summary(all_outcomes_change_8_for_models_A$pof_food_present_change)
+summary(all_outcomes_change_8_for_models_B$pof_food_present_change)
+
+difference_in_pof_food_present_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_pof_food_present_change = (pof_food_present_change[Diet == "A"] - pof_food_present_change[Diet == "B"]))
+View(difference_in_pof_food_present_change)
+
+summary(difference_in_pof_food_present_change$difference_in_pof_food_present_change, na.rm = T)
+mean(difference_in_pof_food_present_change$difference_in_pof_food_present_change, na.rm = T)
+sd(difference_in_pof_food_present_change$difference_in_pof_food_present_change, na.rm = T)
+
+pof_food_present_change_A <- all_outcomes_change_8_for_models_A$pof_food_present_change
+pof_food_present_change_B <- all_outcomes_change_8_for_models_B$pof_food_present_change
+t.test(pof_food_present_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_present_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_present_change_A, pof_food_present_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(pof_food_present_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$pof_food_present_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$pof_food_present_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+pof_food_present_change_A_first <- all_outcomes_change_8_for_models_A$pof_food_present_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+pof_food_present_change_B_first <- all_outcomes_change_8_for_models_B$pof_food_present_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(pof_food_present_change_A_first, na.rm = T)
+sd(pof_food_present_change_A_first, na.rm = T)
+summary(pof_food_present_change_B_first, na.rm = T)
+sd(pof_food_present_change_B_first, na.rm = T)
+t.test(pof_food_present_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_present_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(pof_food_present_change_A_first,pof_food_present_change_B_first)
+t.test(pof_food_present_change_A_first, pof_food_present_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+pof_food_present_change_A_second <- all_outcomes_change_8_for_models_A$pof_food_present_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+pof_food_present_change_B_second <- all_outcomes_change_8_for_models_B$pof_food_present_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(pof_food_present_change_A_second, na.rm = T)
+sd(pof_food_present_change_A_second, na.rm = T)
+summary(pof_food_present_change_B_second, na.rm = T)
+sd(pof_food_present_change_B_second, na.rm = T)
+t.test(pof_food_present_change_A_second, mu = 0, alternative = "two.sided")
+t.test(pof_food_present_change_B_second, mu = 0, alternative = "two.sided")
+t.test(pof_food_present_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_present_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(pof_food_present_change ~ Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#pof_food_tasted_change
+summary(all_outcomes_change_8_for_models_A$pof_food_tasted_change)
+summary(all_outcomes_change_8_for_models_B$pof_food_tasted_change)
+
+difference_in_pof_food_tasted_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_pof_food_tasted_change = (pof_food_tasted_change[Diet == "A"] - pof_food_tasted_change[Diet == "B"]))
+View(difference_in_pof_food_tasted_change)
+
+summary(difference_in_pof_food_tasted_change$difference_in_pof_food_tasted_change, na.rm = T)
+mean(difference_in_pof_food_tasted_change$difference_in_pof_food_tasted_change, na.rm = T)
+sd(difference_in_pof_food_tasted_change$difference_in_pof_food_tasted_change, na.rm = T)
+
+pof_food_tasted_change_A <- all_outcomes_change_8_for_models_A$pof_food_tasted_change
+pof_food_tasted_change_B <- all_outcomes_change_8_for_models_B$pof_food_tasted_change
+t.test(pof_food_tasted_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_tasted_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_tasted_change_A, pof_food_tasted_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(pof_food_tasted_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$pof_food_tasted_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$pof_food_tasted_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+pof_food_tasted_change_A_first <- all_outcomes_change_8_for_models_A$pof_food_tasted_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+pof_food_tasted_change_B_first <- all_outcomes_change_8_for_models_B$pof_food_tasted_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(pof_food_tasted_change_A_first, na.rm = T)
+sd(pof_food_tasted_change_A_first, na.rm = T)
+summary(pof_food_tasted_change_B_first, na.rm = T)
+sd(pof_food_tasted_change_B_first, na.rm = T)
+t.test(pof_food_tasted_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_tasted_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(pof_food_tasted_change_A_first,pof_food_tasted_change_B_first)
+t.test(pof_food_tasted_change_A_first, pof_food_tasted_change_B_first, alternative = "two.sided", na.rm =T)
+
+#By second diet
+pof_food_tasted_change_A_second <- all_outcomes_change_8_for_models_A$pof_food_tasted_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+pof_food_tasted_change_B_second <- all_outcomes_change_8_for_models_B$pof_food_tasted_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(pof_food_tasted_change_A_second, na.rm = T)
+sd(pof_food_tasted_change_A_second, na.rm = T)
+summary(pof_food_tasted_change_B_second, na.rm = T)
+sd(pof_food_tasted_change_B_second, na.rm = T)
+t.test(pof_food_tasted_change_A_second, mu = 0, alternative = "two.sided")
+t.test(pof_food_tasted_change_B_second, mu = 0, alternative = "two.sided")
+t.test(pof_food_tasted_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_food_tasted_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(pof_food_tasted_change ~ Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#pof_total_change
+summary(all_outcomes_change_8_for_models_A$pof_total_change)
+summary(all_outcomes_change_8_for_models_B$pof_total_change)
+
+difference_in_pof_total_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_pof_total_change = (pof_total_change[Diet == "A"] - pof_total_change[Diet == "B"]))
+View(difference_in_pof_total_change)
+
+summary(difference_in_pof_total_change$difference_in_pof_total_change, na.rm = T)
+mean(difference_in_pof_total_change$difference_in_pof_total_change, na.rm = T)
+sd(difference_in_pof_total_change$difference_in_pof_total_change, na.rm = T)
+
+pof_total_change_A <- all_outcomes_change_8_for_models_A$pof_total_change
+pof_total_change_B <- all_outcomes_change_8_for_models_B$pof_total_change
+t.test(pof_total_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_total_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_total_change_A, pof_total_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(pof_total_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$pof_total_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$pof_total_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+pof_total_change_A_first <- all_outcomes_change_8_for_models_A$pof_total_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+pof_total_change_B_first <- all_outcomes_change_8_for_models_B$pof_total_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(pof_total_change_A_first, na.rm = T)
+sd(pof_total_change_A_first, na.rm = T)
+summary(pof_total_change_B_first, na.rm = T)
+sd(pof_total_change_B_first, na.rm = T)
+t.test(pof_total_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_total_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(pof_total_change_A_first,pof_total_change_B_first)
+t.test(pof_total_change_A_first, pof_total_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+pof_total_change_A_second <- all_outcomes_change_8_for_models_A$pof_total_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+pof_total_change_B_second <- all_outcomes_change_8_for_models_B$pof_total_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(pof_total_change_A_second, na.rm = T)
+sd(pof_total_change_A_second, na.rm = T)
+summary(pof_total_change_B_second, na.rm = T)
+sd(pof_total_change_B_second, na.rm = T)
+t.test(pof_total_change_A_second, mu = 0, alternative = "two.sided")
+t.test(pof_total_change_B_second, mu = 0, alternative = "two.sided")
+t.test(pof_total_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(pof_total_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(pof_total_change ~ Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#coeq_craving_control_reverse_change
+summary(all_outcomes_change_8_for_models_A$coeq_craving_control_reverse_change)
+summary(all_outcomes_change_8_for_models_B$coeq_craving_control_reverse_change)
+
+difference_in_coeq_craving_control_reverse_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_coeq_craving_control_reverse_change = (coeq_craving_control_reverse_change[Diet == "A"] - coeq_craving_control_reverse_change[Diet == "B"]))
+View(difference_in_coeq_craving_control_reverse_change)
+
+summary(difference_in_coeq_craving_control_reverse_change$difference_in_coeq_craving_control_reverse_change, na.rm = T)
+mean(difference_in_coeq_craving_control_reverse_change$difference_in_coeq_craving_control_reverse_change, na.rm = T)
+sd(difference_in_coeq_craving_control_reverse_change$difference_in_coeq_craving_control_reverse_change, na.rm = T)
+
+coeq_craving_control_reverse_change_A <- all_outcomes_change_8_for_models_A$coeq_craving_control_reverse_change
+coeq_craving_control_reverse_change_B <- all_outcomes_change_8_for_models_B$coeq_craving_control_reverse_change
+t.test(coeq_craving_control_reverse_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_control_reverse_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_control_reverse_change_A, coeq_craving_control_reverse_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(coeq_craving_control_reverse_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$coeq_craving_control_reverse_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$coeq_craving_control_reverse_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+coeq_craving_control_reverse_change_A_first <- all_outcomes_change_8_for_models_A$coeq_craving_control_reverse_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+coeq_craving_control_reverse_change_B_first <- all_outcomes_change_8_for_models_B$coeq_craving_control_reverse_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(coeq_craving_control_reverse_change_A_first, na.rm = T)
+sd(coeq_craving_control_reverse_change_A_first, na.rm = T)
+summary(coeq_craving_control_reverse_change_B_first, na.rm = T)
+sd(coeq_craving_control_reverse_change_B_first, na.rm = T)
+t.test(coeq_craving_control_reverse_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_control_reverse_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(coeq_craving_control_reverse_change_A_first,coeq_craving_control_reverse_change_B_first)
+t.test(coeq_craving_control_reverse_change_A_first, coeq_craving_control_reverse_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+coeq_craving_control_reverse_change_A_second <- all_outcomes_change_8_for_models_A$coeq_craving_control_reverse_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+coeq_craving_control_reverse_change_B_second <- all_outcomes_change_8_for_models_B$coeq_craving_control_reverse_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(coeq_craving_control_reverse_change_A_second, na.rm = T)
+sd(coeq_craving_control_reverse_change_A_second, na.rm = T)
+summary(coeq_craving_control_reverse_change_B_second, na.rm = T)
+sd(coeq_craving_control_reverse_change_B_second, na.rm = T)
+t.test(coeq_craving_control_reverse_change_A_second, mu = 0, alternative = "two.sided")
+t.test(coeq_craving_control_reverse_change_B_second, mu = 0, alternative = "two.sided")
+t.test(coeq_craving_control_reverse_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_control_reverse_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(coeq_craving_control_reverse_change ~ Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#coeq_craving_sweet_change
+summary(all_outcomes_change_8_for_models_A$coeq_craving_sweet_change)
+summary(all_outcomes_change_8_for_models_B$coeq_craving_sweet_change)
+
+difference_in_coeq_craving_sweet_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_coeq_craving_sweet_change = (coeq_craving_sweet_change[Diet == "A"] - coeq_craving_sweet_change[Diet == "B"]))
+View(difference_in_coeq_craving_sweet_change)
+
+summary(difference_in_coeq_craving_sweet_change$difference_in_coeq_craving_sweet_change, na.rm = T)
+mean(difference_in_coeq_craving_sweet_change$difference_in_coeq_craving_sweet_change, na.rm = T)
+sd(difference_in_coeq_craving_sweet_change$difference_in_coeq_craving_sweet_change, na.rm = T)
+
+coeq_craving_sweet_change_A <- all_outcomes_change_8_for_models_A$coeq_craving_sweet_change
+coeq_craving_sweet_change_B <- all_outcomes_change_8_for_models_B$coeq_craving_sweet_change
+t.test(coeq_craving_sweet_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_sweet_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_sweet_change_A, coeq_craving_sweet_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(coeq_craving_sweet_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$coeq_craving_sweet_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$coeq_craving_sweet_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+coeq_craving_sweet_change_A_first <- all_outcomes_change_8_for_models_A$coeq_craving_sweet_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+coeq_craving_sweet_change_B_first <- all_outcomes_change_8_for_models_B$coeq_craving_sweet_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(coeq_craving_sweet_change_A_first, na.rm = T)
+sd(coeq_craving_sweet_change_A_first, na.rm = T)
+summary(coeq_craving_sweet_change_B_first, na.rm = T)
+sd(coeq_craving_sweet_change_B_first, na.rm = T)
+t.test(coeq_craving_sweet_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_sweet_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(coeq_craving_sweet_change_A_first,coeq_craving_sweet_change_B_first)
+t.test(coeq_craving_sweet_change_A_first, coeq_craving_sweet_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+coeq_craving_sweet_change_A_second <- all_outcomes_change_8_for_models_A$coeq_craving_sweet_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+coeq_craving_sweet_change_B_second <- all_outcomes_change_8_for_models_B$coeq_craving_sweet_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(coeq_craving_sweet_change_A_second, na.rm = T)
+sd(coeq_craving_sweet_change_A_second, na.rm = T)
+summary(coeq_craving_sweet_change_B_second, na.rm = T)
+sd(coeq_craving_sweet_change_B_second, na.rm = T)
+t.test(coeq_craving_sweet_change_A_second, mu = 0, alternative = "two.sided")
+t.test(coeq_craving_sweet_change_B_second, mu = 0, alternative = "two.sided")
+t.test(coeq_craving_sweet_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_sweet_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(coeq_craving_sweet_change ~ Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+#coeq_craving_savoury_change
+summary(all_outcomes_change_8_for_models_A$coeq_craving_savoury_change)
+summary(all_outcomes_change_8_for_models_B$coeq_craving_savoury_change)
+
+difference_in_coeq_craving_savoury_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_coeq_craving_savoury_change = (coeq_craving_savoury_change[Diet == "A"] - coeq_craving_savoury_change[Diet == "B"]))
+View(difference_in_coeq_craving_savoury_change)
+
+summary(difference_in_coeq_craving_savoury_change$difference_in_coeq_craving_savoury_change, na.rm = T)
+mean(difference_in_coeq_craving_savoury_change$difference_in_coeq_craving_savoury_change, na.rm = T)
+sd(difference_in_coeq_craving_savoury_change$difference_in_coeq_craving_savoury_change, na.rm = T)
+
+coeq_craving_savoury_change_A <- all_outcomes_change_8_for_models_A$coeq_craving_savoury_change
+coeq_craving_savoury_change_B <- all_outcomes_change_8_for_models_B$coeq_craving_savoury_change
+t.test(coeq_craving_savoury_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_savoury_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_savoury_change_A, coeq_craving_savoury_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(coeq_craving_savoury_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$coeq_craving_savoury_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$coeq_craving_savoury_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+coeq_craving_savoury_change_A_first <- all_outcomes_change_8_for_models_A$coeq_craving_savoury_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+coeq_craving_savoury_change_B_first <- all_outcomes_change_8_for_models_B$coeq_craving_savoury_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(coeq_craving_savoury_change_A_first, na.rm = T)
+sd(coeq_craving_savoury_change_A_first, na.rm = T)
+summary(coeq_craving_savoury_change_B_first, na.rm = T)
+sd(coeq_craving_savoury_change_B_first, na.rm = T)
+t.test(coeq_craving_savoury_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_savoury_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(coeq_craving_savoury_change_A_first,coeq_craving_savoury_change_B_first)
+t.test(coeq_craving_savoury_change_A_first, coeq_craving_savoury_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+coeq_craving_savoury_change_A_second <- all_outcomes_change_8_for_models_A$coeq_craving_savoury_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+coeq_craving_savoury_change_B_second <- all_outcomes_change_8_for_models_B$coeq_craving_savoury_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(coeq_craving_savoury_change_A_second, na.rm = T)
+sd(coeq_craving_savoury_change_A_second, na.rm = T)
+summary(coeq_craving_savoury_change_B_second, na.rm = T)
+sd(coeq_craving_savoury_change_B_second, na.rm = T)
+t.test(coeq_craving_savoury_change_A_second, mu = 0, alternative = "two.sided")
+t.test(coeq_craving_savoury_change_B_second, mu = 0, alternative = "two.sided")
+t.test(coeq_craving_savoury_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_craving_savoury_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(coeq_craving_savoury_change ~ Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#coeq_positive_mood_change
+summary(all_outcomes_change_8_for_models_A$coeq_positive_mood_change)
+summary(all_outcomes_change_8_for_models_B$coeq_positive_mood_change)
+
+difference_in_coeq_positive_mood_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_coeq_positive_mood_change = (coeq_positive_mood_change[Diet == "A"] - coeq_positive_mood_change[Diet == "B"]))
+View(difference_in_coeq_positive_mood_change)
+
+summary(difference_in_coeq_positive_mood_change$difference_in_coeq_positive_mood_change, na.rm = T)
+mean(difference_in_coeq_positive_mood_change$difference_in_coeq_positive_mood_change, na.rm = T)
+sd(difference_in_coeq_positive_mood_change$difference_in_coeq_positive_mood_change, na.rm = T)
+
+coeq_positive_mood_change_A <- all_outcomes_change_8_for_models_A$coeq_positive_mood_change
+coeq_positive_mood_change_B <- all_outcomes_change_8_for_models_B$coeq_positive_mood_change
+t.test(coeq_positive_mood_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_positive_mood_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_positive_mood_change_A, coeq_positive_mood_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(coeq_positive_mood_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$coeq_positive_mood_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$coeq_positive_mood_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+coeq_positive_mood_change_A_first <- all_outcomes_change_8_for_models_A$coeq_positive_mood_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+coeq_positive_mood_change_B_first <- all_outcomes_change_8_for_models_B$coeq_positive_mood_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(coeq_positive_mood_change_A_first, na.rm = T)
+sd(coeq_positive_mood_change_A_first, na.rm = T)
+summary(coeq_positive_mood_change_B_first, na.rm = T)
+sd(coeq_positive_mood_change_B_first, na.rm = T)
+t.test(coeq_positive_mood_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_positive_mood_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(coeq_positive_mood_change_A_first,coeq_positive_mood_change_B_first)
+t.test(coeq_positive_mood_change_A_first, coeq_positive_mood_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+coeq_positive_mood_change_A_second <- all_outcomes_change_8_for_models_A$coeq_positive_mood_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+coeq_positive_mood_change_B_second <- all_outcomes_change_8_for_models_B$coeq_positive_mood_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(coeq_positive_mood_change_A_second, na.rm = T)
+sd(coeq_positive_mood_change_A_second, na.rm = T)
+summary(coeq_positive_mood_change_B_second, na.rm = T)
+sd(coeq_positive_mood_change_B_second, na.rm = T)
+t.test(coeq_positive_mood_change_A_second, mu = 0, alternative = "two.sided")
+t.test(coeq_positive_mood_change_B_second, mu = 0, alternative = "two.sided")
+t.test(coeq_positive_mood_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq_positive_mood_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(coeq_positive_mood_change ~ Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+#coeq21_change
+summary(all_outcomes_change_8_for_models_A$coeq21_change)
+summary(all_outcomes_change_8_for_models_B$coeq21_change)
+
+difference_in_coeq21_change <- all_outcomes_change_8_for_models %>%
+  group_by(record_id) %>%
+  summarise(
+    difference_in_coeq21_change = (coeq21_change[Diet == "A"] - coeq21_change[Diet == "B"]))
+View(difference_in_coeq21_change)
+
+summary(difference_in_coeq21_change$difference_in_coeq21_change, na.rm = T)
+mean(difference_in_coeq21_change$difference_in_coeq21_change, na.rm = T)
+sd(difference_in_coeq21_change$difference_in_coeq21_change, na.rm = T)
+
+coeq21_change_A <- all_outcomes_change_8_for_models_A$coeq21_change
+coeq21_change_B <- all_outcomes_change_8_for_models_B$coeq21_change
+t.test(coeq21_change_A, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq21_change_B, baseline, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq21_change_A, coeq21_change_B, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+Model_Final <- lmer(coeq21_change ~ Diet_Numeric + randomisation_arm + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+confint(lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none"))
+#EMMEANS
+emmeans(Model_Final, "Diet_Numeric")
+Diet <- emmeans(Model_Final, "Diet_Numeric")
+emms1 <- contrast(Diet)
+pairs(emms1, by = NULL)
+emmeans(Model_Final, "Diet_Numeric", "randomisation_arm")
+emmeans(Model_Final, "randomisation_arm")
+emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms <-  emmeans(Model_Final, ~ Diet_Numeric*randomisation_arm)
+emms1 <- contrast(emms)
+pairs(emms1, by = NULL)
+pairs(emms1, by = NULL,adjust = "none")
+
+#By first diet
+summary(all_outcomes_change_8_for_models_First_diet$coeq21_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 1], na.rm = T)
+summary(all_outcomes_change_8_for_models_First_diet$coeq21_change[all_outcomes_change_8_for_models_First_diet$Diet_Numeric == 2], na.rm = T)
+
+coeq21_change_A_first <- all_outcomes_change_8_for_models_A$coeq21_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+coeq21_change_B_first <- all_outcomes_change_8_for_models_B$coeq21_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+summary(coeq21_change_A_first, na.rm = T)
+sd(coeq21_change_A_first, na.rm = T)
+summary(coeq21_change_B_first, na.rm = T)
+sd(coeq21_change_B_first, na.rm = T)
+t.test(coeq21_change_A_first, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq21_change_B_first, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+var.test(coeq21_change_A_first,coeq21_change_B_first)
+t.test(coeq21_change_A_first, coeq21_change_B_first, alternative = "two.sided", na.rm =T, var.equal = T)
+
+#By second diet
+coeq21_change_A_second <- all_outcomes_change_8_for_models_A$coeq21_change[all_outcomes_change_8_for_models_A$randomisation_arm == 2]
+coeq21_change_B_second <- all_outcomes_change_8_for_models_B$coeq21_change[all_outcomes_change_8_for_models_A$randomisation_arm == 1]
+summary(coeq21_change_A_second, na.rm = T)
+sd(coeq21_change_A_second, na.rm = T)
+summary(coeq21_change_B_second, na.rm = T)
+sd(coeq21_change_B_second, na.rm = T)
+t.test(coeq21_change_A_second, mu = 0, alternative = "two.sided")
+t.test(coeq21_change_B_second, mu = 0, alternative = "two.sided")
+t.test(coeq21_change_A_second, baseline_BA, alternative = "two.sided", paired = TRUE, na.rm =T)
+t.test(coeq21_change_B_second, baseline_AB, alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#repeated measures
+Model_Final <- lmer(coeq21_change ~ Diet_Numeric*factor(Period) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = all_outcomes_change_4_8_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric|Period, ddf="Satterthwaite",adjust = "none")
+
+
+
+
