@@ -1,0 +1,244 @@
+##################################################
+#                       VAS                      #
+##################################################
+
+#how_hungry_change
+Model_Final <- lmer(how_hungry_change ~ Diet_Numeric*Time + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], mu = 0, alternative = "two.sided")
+
+var.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+         UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0])
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+       UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_hungry_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#PP
+Model_Final <- lmer(how_hungry_change ~ Diet_Numeric*Time + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_PP)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+#first diet
+UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First
+
+Model_Final <- lmer(how_hungry_change ~ Diet_Numeric*Time + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+#how_sick_change
+Model_Final <- lmer(how_sick_change ~ Diet_Numeric*as.factor(Time) + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], mu = 0, alternative = "two.sided")
+
+var.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+         UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0])
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+       UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_sick_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#PP
+Model_Final <- lmer(how_sick_change ~ Diet_Numeric*Time + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_PP)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+#first diet
+UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First
+
+Model_Final <- lmer(how_sick_change ~  Diet_Numeric*as.factor(Time) + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+#how_much_change
+Model_Final <- lmer(how_much_change ~ Diet_Numeric*Time + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], mu = 0, alternative = "two.sided")
+
+var.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+         UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0])
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+       UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_much_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#PP
+Model_Final <- lmer(how_much_change ~ Diet_Numeric*Time + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_PP)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+#first diet
+UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First
+
+Model_Final <- lmer(how_much_change ~ Diet_Numeric*Time + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+#how_full_change
+Model_Final <- lmer(how_full_change ~ Diet_Numeric*Time + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], mu = 0, alternative = "two.sided")
+
+var.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+         UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0])
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+       UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_full_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#PP
+Model_Final <- lmer(how_full_change ~ Diet_Numeric*Time + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_PP)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+#first diet
+UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First
+
+Model_Final <- lmer(how_full_change ~ Diet_Numeric*Time + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+#how_pleasant_change
+Model_Final <- lmer(how_pleasant_change ~ Diet_Numeric*Time + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], na.rm =T)
+sd(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 1], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 1], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 2], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 2], mu = 0, alternative = "two.sided")
+
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], na.rm =T)
+summary(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], na.rm =T)
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time == 3], mu = 0, alternative = "two.sided")
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time == 3], mu = 0, alternative = "two.sided")
+
+var.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+         UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0])
+t.test(UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_A$Time_at_mealtest == 0], 
+       UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$how_pleasant_change[UPDATE_database_Secondary_All_Changes_8_VAS_for_models_B$Time_at_mealtest == 0], alternative = "two.sided", paired = TRUE, na.rm =T)
+
+#PP
+Model_Final <- lmer(how_pleasant_change ~ Diet_Numeric*Time + Diet_Numeric*randomisation_arm + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_PP)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
+#first diet
+UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First
+
+Model_Final <- lmer(how_pleasant_change ~ Diet_Numeric*Time + work_pattern +
+                      (1|record_id), data = UPDATE_database_Secondary_All_Changes_8_VAS_for_models_First)
+summary(Model_Final)
+parameters::p_value(Model_Final)
+lsmeans(Model_Final, pairwise~Diet_Numeric, ddf="Satterthwaite",adjust = "none")
+lsmeans(Model_Final, pairwise~Diet_Numeric|Time, ddf="Satterthwaite",adjust = "none")
+
